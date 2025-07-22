@@ -11,6 +11,7 @@ const Chat = ({ receiverId }: ChatProps) => {
   const [message, setMessage] = useState('')
   const [isConnected, setIsConnected] = useState(false)
   const [isTyping, setIsTyping] = useState(false)
+  const [isUserTyping, setIsUserTyping] = useState(false) // Track if current user is typing
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const senderId = localStorage.getItem('userId') || ''
   const token = localStorage.getItem('token') || ''
@@ -67,6 +68,7 @@ const Chat = ({ receiverId }: ChatProps) => {
   useEffect(() => {
     // Check initial connection status
     setIsConnected(socket.connected)
+    console.log('🔌 Initial socket connection status:', socket.connected)
     
     // Join the chat room with current user ID
     socket.emit('join', senderId)
@@ -78,6 +80,7 @@ const Chat = ({ receiverId }: ChatProps) => {
       console.log('✅ Connected to chat server')
       // Re-join room after reconnection
       socket.emit('join', senderId)
+      console.log(`🔗 Re-joined room: ${senderId}`)
     })
     
     socket.on('disconnect', () => {
@@ -101,30 +104,35 @@ const Chat = ({ receiverId }: ChatProps) => {
 
     // Listen for new messages
     const handleReceiveMessage = (newMsg: any) => {
-      console.log('📩 Received message:', {
+      console.log('📩 Received message via socket:', {
+        messageData: newMsg,
         from: newMsg.senderId,
         to: newMsg.receiverId,
         message: newMsg.message,
         currentUser: senderId,
-        currentReceiver: receiverId
+        currentReceiver: receiverId,
+        shouldShow: (newMsg.senderId === senderId && newMsg.receiverId === receiverId) ||
+                   (newMsg.senderId === receiverId && newMsg.receiverId === senderId)
       })
       
       // Only add messages between current user and the selected receiver
       if (
-        (newMsg.senderId === senderId && newMsg.receiverId === receiverId) ||
-        (newMsg.senderId === receiverId && newMsg.receiverId === senderId)
+        (String(newMsg.senderId) === String(senderId) && String(newMsg.receiverId) === String(receiverId)) ||
+        (String(newMsg.senderId) === String(receiverId) && String(newMsg.receiverId) === String(senderId))
       ) {
         setMessages((prev) => {
           // Check for duplicates more strictly
           const messageExists = prev.some(msg => 
-            msg.senderId === newMsg.senderId && 
-            msg.receiverId === newMsg.receiverId && 
+            String(msg.senderId) === String(newMsg.senderId) && 
+            String(msg.receiverId) === String(newMsg.receiverId) && 
             msg.message === newMsg.message &&
             Math.abs(new Date(msg.timestamp).getTime() - new Date(newMsg.timestamp).getTime()) < 2000
           )
           
           if (!messageExists) {
             console.log('✅ Adding new message to chat')
+            // Also refresh from server to ensure we have all messages
+            setTimeout(() => refreshMessages(), 100)
             return [...prev, newMsg]
           } else {
             console.log('⚠️ Duplicate message ignored')
@@ -132,7 +140,7 @@ const Chat = ({ receiverId }: ChatProps) => {
           }
         })
       } else {
-        console.log('🚫 Message not for this chat')
+        console.log('🚫 Message not for this chat - ignoring')
       }
     }
 
@@ -145,6 +153,11 @@ const Chat = ({ receiverId }: ChatProps) => {
     })
 
     return () => {
+      // Clear typing timer
+      if (typingTimer) {
+        clearTimeout(typingTimer)
+      }
+      
       socket.off('receiveMessage', handleReceiveMessage)
       socket.off('userTyping')
       socket.off('connect')
@@ -152,14 +165,50 @@ const Chat = ({ receiverId }: ChatProps) => {
     }
   }, [receiverId, token, senderId])
 
-  // Typing indicator
-  let typingTimer: number
+  // 🔄 Function to refresh messages from server
+  const refreshMessages = async () => {
+    try {
+      const data = await chatAPI.getMessages(receiverId, token)
+      console.log('🔄 Messages refreshed after sending')
+      setMessages(data)
+    } catch (error) {
+      console.error('Error refreshing messages:', error)
+    }
+  }
+
+  // 🔄 Optimized typing indicator - only sends once and lasts 2 seconds
+  let typingTimer: number | null = null
   const handleTyping = () => {
-    socket.emit('typing', { userId: senderId, receiverId, typing: true })
-    clearTimeout(typingTimer)
-    typingTimer = setTimeout(() => {
-      socket.emit('typing', { userId: senderId, receiverId, typing: false })
-    }, 1000)
+    // Only send typing indicator if not already typing
+    if (!isUserTyping) {
+      setIsUserTyping(true)
+      socket.emit('typing', { userId: senderId, receiverId, typing: true })
+      console.log('⌨️ Started typing indicator')
+      
+      // Clear any existing timer
+      if (typingTimer) {
+        clearTimeout(typingTimer)
+      }
+      
+      // Stop typing indicator after 2 seconds
+      typingTimer = setTimeout(() => {
+        setIsUserTyping(false)
+        socket.emit('typing', { userId: senderId, receiverId, typing: false })
+        console.log('⌨️ Stopped typing indicator after 2s')
+        typingTimer = null
+      }, 2000) // 2 seconds
+    } else {
+      // If already typing, just reset the timer to extend the typing period
+      if (typingTimer) {
+        clearTimeout(typingTimer)
+      }
+      typingTimer = setTimeout(() => {
+        setIsUserTyping(false)
+        socket.emit('typing', { userId: senderId, receiverId, typing: false })
+        console.log('⌨️ Stopped typing indicator after 2s')
+        typingTimer = null
+      }, 2000)
+    }
   }
 
   const sendMessage = async () => {
@@ -194,11 +243,17 @@ const Chat = ({ receiverId }: ChatProps) => {
       console.log('💾 Message saved to API:', savedMessage)
       
       // Send via socket for real-time delivery to other user
-      socket.emit('sendMessage', {
-        ...messageData,
-        _id: savedMessage._id || savedMessage.id
-      })
-      console.log('📡 Message sent via Socket.io')
+      const socketMessage = {
+        senderId: senderId,
+        receiverId: receiverId,
+        message: messageData.message,
+        _id: savedMessage._id || savedMessage.id,
+        timestamp: messageData.timestamp
+      }
+      
+      console.log('📡 Sending socket message:', socketMessage)
+      socket.emit('sendMessage', socketMessage)
+      console.log('📡 Socket emit completed')
       
       // Update the optimistic message with real data
       setMessages(prev => 
@@ -207,8 +262,17 @@ const Chat = ({ receiverId }: ChatProps) => {
         )
       )
       
-      // Stop typing indicator
+      // Stop typing indicator when message is sent
+      if (typingTimer) {
+        clearTimeout(typingTimer)
+        typingTimer = null
+      }
+      setIsUserTyping(false)
       socket.emit('typing', { userId: senderId, receiverId, typing: false })
+      
+      // 🔄 Refresh messages after sending to ensure we have the latest state
+      setTimeout(() => refreshMessages(), 1000) // Small delay to ensure server is updated
+      
     } catch (error) {
       console.error('❌ Error sending message:', error)
       // Remove optimistic message on error
@@ -216,6 +280,9 @@ const Chat = ({ receiverId }: ChatProps) => {
       // Still try to send via socket even if API fails
       socket.emit('sendMessage', messageData)
       setMessage('')
+      
+      // 🔄 Also refresh on error to sync state
+      setTimeout(() => refreshMessages(), 1000)
     }
   }
 
@@ -305,6 +372,31 @@ const Chat = ({ receiverId }: ChatProps) => {
           </div>
         </div>
         
+        {/* Debug: Socket Test Button */}
+        <div className="flex gap-2">
+          <button 
+            onClick={() => {
+              console.log('🧪 Testing socket connection...')
+              console.log('Socket connected:', socket.connected)
+              console.log('Current user ID:', senderId)
+              console.log('Chat partner ID:', receiverId)
+              socket.emit('ping', { from: senderId, to: receiverId, message: 'test' })
+            }}
+            className="bg-green-700 hover:bg-green-600 text-white text-xs px-3 py-1 rounded"
+          >
+            Test Socket
+          </button>
+          <button 
+            onClick={() => {
+              console.log('🔄 Manual refresh...')
+              refreshMessages()
+            }}
+            className="bg-blue-700 hover:bg-blue-600 text-white text-xs px-3 py-1 rounded"
+          >
+            Refresh
+          </button>
+        </div>
+        
         {/* Message alignment guide */}
         <div className="text-right text-green-100 text-xs">
           <div className="flex flex-col space-y-1">
@@ -355,7 +447,7 @@ const Chat = ({ receiverId }: ChatProps) => {
           ) : (
             <>
               {messages.map((msg, i) => {
-                const isOwn = msg.senderId === senderId
+                const isOwn = String(msg.senderId) === String(senderId)
                 const showDateDivider = i === 0 || 
                   new Date(messages[i-1].timestamp).toDateString() !== new Date(msg.timestamp).toDateString()
                 
@@ -372,19 +464,19 @@ const Chat = ({ receiverId }: ChatProps) => {
                     
                     {/* Message Bubble */}
                     <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-3`}>
-                      {/* Avatar for received messages */}
+                      {/* Avatar for received messages (LEFT SIDE) */}
                       {!isOwn && (
-                        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mr-2 flex-shrink-0">
+                        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
                           <span className="text-white text-xs font-bold">
-                            {receiverId.charAt(0).toUpperCase()}
+                            {userRole === 'doctor' ? '🧑‍🦱' : '👨‍⚕️'}
                           </span>
                         </div>
                       )}
                       
                       <div className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl relative ${
                         isOwn 
-                          ? 'bg-green-500 text-white rounded-br-md ml-12' 
-                          : 'bg-white text-gray-800 rounded-bl-md shadow-md mr-12 border border-gray-200'
+                          ? 'bg-green-500 text-white rounded-br-sm' 
+                          : 'bg-white text-gray-800 rounded-bl-sm shadow-md border border-gray-200'
                       }`}>
                         {/* Clear sender label */}
                         <div className={`text-xs font-bold mb-2 ${
@@ -393,34 +485,34 @@ const Chat = ({ receiverId }: ChatProps) => {
                           {getMessageLabel(msg.senderId)}
                         </div>
                         <p className="text-sm leading-relaxed">{msg.message}</p>
-                        <div className={`flex items-center justify-end mt-2 space-x-1 ${
+                        <div className={`flex items-center ${isOwn ? 'justify-end' : 'justify-start'} mt-2 space-x-1 ${
                           isOwn ? 'text-green-100' : 'text-gray-500'
                         }`}>
                           <span className="text-xs">{formatTime(msg.timestamp)}</span>
                           {isOwn && (
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <svg className="w-3 h-3 ml-1" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                             </svg>
                           )}
                         </div>
                         
                         {/* Message tail */}
-                        <div className={`absolute bottom-2 ${
-                          isOwn 
-                            ? 'right-0 translate-x-1 text-green-500' 
-                            : 'left-0 -translate-x-1 text-white'
-                        }`}>
-                          <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor">
-                            <path d="M0 8s0-2 2-4 4-4 6-4v8H0z"/>
-                          </svg>
-                        </div>
+                        {isOwn ? (
+                          <div className="absolute bottom-0 right-0 transform translate-x-1 translate-y-1">
+                            <div className="w-0 h-0 border-l-8 border-l-green-500 border-t-8 border-t-transparent"></div>
+                          </div>
+                        ) : (
+                          <div className="absolute bottom-0 left-0 transform -translate-x-1 translate-y-1">
+                            <div className="w-0 h-0 border-r-8 border-r-white border-t-8 border-t-transparent"></div>
+                          </div>
+                        )}
                       </div>
                       
-                      {/* Avatar for sent messages */}
+                      {/* Avatar for sent messages (RIGHT SIDE) */}
                       {isOwn && (
-                        <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center ml-2 flex-shrink-0">
-                          <span className="text-white text-xs font-bold">
-                            You
+                        <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center ml-3 flex-shrink-0">
+                          <span className="text-white text-xs">
+                            👤
                           </span>
                         </div>
                       )}

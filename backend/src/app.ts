@@ -19,6 +19,7 @@ import { initializeAllModels } from './models/index'
 
 // Chat model
 import { ChatMessagePG } from './models/ChatMessagePG'
+import meetingRoutes from './routes/meetingRoutes'
 
 dotenv.config()
 
@@ -39,6 +40,8 @@ app.use('/admin', adminRoutes)
 app.use('/doctor', doctorRoutes)
 app.use('/patient', patientRoutes)
 app.use('/api/chat', chatRoutes)
+app.use('/meetings', meetingRoutes)
+
 
 // 📦 Connect PostgreSQL and initialize Sequelize models
 connectPostgres()

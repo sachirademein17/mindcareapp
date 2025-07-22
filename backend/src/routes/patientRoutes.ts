@@ -8,7 +8,8 @@ import {
   getEnrollmentStatus,
   getEnrollmentStatusByDoctor,
   cancelEnrollmentByDoctor,
-  getPrescriptions
+  getPrescriptions,
+  logSecurityViolation
 } from '../controllers/patientController'
 import { verifyToken, requireRole } from '../middlewares/auth.middleware'
 
@@ -26,5 +27,6 @@ router.delete('/cancel-enrollment/:doctorId', requirePatient, cancelEnrollmentBy
 router.get('/enrollment/:enrollmentId', requirePatient, getEnrollmentStatus)
 router.get('/enrollment-status/:doctorId', requirePatient, getEnrollmentStatusByDoctor)
 router.get('/prescriptions', requirePatient, getPrescriptions)
+router.post('/security-violation', requirePatient, logSecurityViolation)
 
 export default router

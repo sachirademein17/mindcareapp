@@ -278,3 +278,33 @@ export const getPrescriptions = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to fetch prescriptions' })
   }
 }
+
+// 🔒 Security: Log prescription page security violations
+export const logSecurityViolation = async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'User not authenticated' })
+    }
+    
+    const { violationType, timestamp, userAgent } = req.body
+    const patientId = parseInt(req.user.id)
+
+    // Log security violation
+    console.warn('🔒 SECURITY VIOLATION DETECTED:', {
+      patientId,
+      patientEmail: req.user.email,
+      violationType,
+      timestamp: new Date(timestamp),
+      userAgent,
+      ip: req.ip || req.connection.remoteAddress
+    })
+
+    // In a production environment, you would save this to a security audit table
+    // await SecurityAudit.create({ patientId, violationType, timestamp, userAgent, ip })
+
+    res.json({ message: 'Security violation logged' })
+  } catch (error) {
+    console.error('Error logging security violation:', error)
+    res.status(500).json({ error: 'Failed to log security violation' })
+  }
+}

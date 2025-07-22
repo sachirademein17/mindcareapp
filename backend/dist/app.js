@@ -21,6 +21,7 @@ const postgres_config_1 = __importDefault(require("./config/postgres.config"));
 const index_1 = require("./models/index");
 // Chat model
 const ChatMessagePG_1 = require("./models/ChatMessagePG");
+const meetingRoutes_1 = __importDefault(require("./routes/meetingRoutes"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 5000;
@@ -36,6 +37,7 @@ app.use('/admin', admin_1.default);
 app.use('/doctor', doctorRoutes_1.default);
 app.use('/patient', patientRoutes_1.default);
 app.use('/api/chat', chatRoutes_1.default);
+app.use('/meetings', meetingRoutes_1.default);
 // 📦 Connect PostgreSQL and initialize Sequelize models
 (0, postgres_config_1.default)();
 (0, index_1.initializeAllModels)();

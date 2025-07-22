@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import axios from 'axios'
 
 export default function SignupDoctor() {
@@ -84,8 +84,8 @@ export default function SignupDoctor() {
       await axios.post('http://localhost:5000/auth/doctor/signup', payload, {
         headers: { 'Content-Type': 'multipart/form-data' }
       })
-      alert('Signup successful! Await admin approval.')
-      navigate('/login')
+      alert('🎉 Signup successful! Please await admin approval.')
+      navigate('/login/doctor')
     } catch (err: any) {
       setErrors({ submit: err.response?.data?.error || 'Signup failed' })
     } finally {
@@ -94,141 +94,226 @@ export default function SignupDoctor() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-green-100 to-blue-100">
-      <form
-        className="bg-white shadow-xl rounded-lg px-10 py-8 w-full max-w-lg"
-        onSubmit={handleSubmit}
-      >
-        <h2 className="text-2xl font-bold mb-6 text-center text-blue-800">Doctor Signup</h2>
+    <div className="min-h-screen bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-900 relative overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0">
+        <div className="absolute top-20 left-10 w-32 h-32 bg-emerald-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+        <div className="absolute top-40 right-20 w-40 h-40 bg-teal-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-2000"></div>
+        <div className="absolute bottom-20 left-20 w-36 h-36 bg-cyan-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-4000"></div>
+        <div className="absolute bottom-40 right-10 w-28 h-28 bg-blue-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-6000"></div>
+      </div>
 
-        <input
-          type="text"
-          name="fullName"
-          placeholder="Full Name"
-          value={formData.fullName}
-          onChange={handleChange}
-          required
-          className="w-full mb-4 p-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-400"
-        />
+      {/* Floating Icons */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-16 left-1/4 text-white/10 text-4xl animate-float animation-delay-1000">👨‍⚕️</div>
+        <div className="absolute top-32 right-1/3 text-white/10 text-3xl animate-float animation-delay-3000">🩺</div>
+        <div className="absolute bottom-24 left-1/3 text-white/10 text-3xl animate-float animation-delay-5000">📋</div>
+        <div className="absolute bottom-40 right-1/4 text-white/10 text-4xl animate-float animation-delay-7000">⚕️</div>
+      </div>
 
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          value={formData.email}
-          onChange={handleChange}
-          required
-          className="w-full mb-4 p-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-400"
-        />
-
-        <input
-          type="text"
-          name="nic"
-          placeholder="NIC Number"
-          value={formData.nic}
-          onChange={handleChange}
-          required
-          className="w-full mb-4 p-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-400"
-        />
-
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={formData.password}
-          onChange={handleChange}
-          required
-          className="w-full mb-4 p-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-400"
-        />
-        {errors.password && <p className="text-red-500 text-sm mb-4">{errors.password}</p>}
-
-        <input
-          type="password"
-          name="confirmPassword"
-          placeholder="Confirm Password"
-          value={formData.confirmPassword}
-          onChange={handleChange}
-          required
-          className="w-full mb-4 p-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-400"
-        />
-        {errors.confirmPassword && <p className="text-red-500 text-sm mb-4">{errors.confirmPassword}</p>}
-
-        <input
-          type="text"
-          name="specialization"
-          placeholder="Specialization (e.g., Clinical Psychology, Psychiatry)"
-          value={formData.specialization}
-          onChange={handleChange}
-          required
-          className="w-full mb-4 p-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-400"
-        />
-
-        <select
-          name="gender"
-          value={formData.gender}
-          onChange={handleChange}
-          required
-          className="w-full mb-4 p-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-400"
-        >
-          <option value="male">Male</option>
-          <option value="female">Female</option>
-          <option value="other">Other</option>
-        </select>
-
-        <input
-          type="text"
-          name="location"
-          placeholder="Location (e.g., Colombo, Kandy, Galle)"
-          value={formData.location}
-          onChange={handleChange}
-          required
-          className="w-full mb-4 p-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-400"
-        />
-
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2">
-            Languages (Select one or more):
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            {['English', 'Sinhala', 'Tamil'].map((language) => (
-              <label key={language} className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={formData.languages.includes(language)}
-                  onChange={() => handleLanguageChange(language)}
-                  className="mr-2"
-                />
-                <span className="text-sm">{language}</span>
-              </label>
-            ))}
+      <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-8">
+        <div className="w-full max-w-2xl animate-fade-in-up">
+          {/* Header Section */}
+          <div className="text-center mb-8 animate-fade-in-down">
+            <div className="mb-6">
+              <h1 className="text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent animate-pulse">
+                MindCare
+              </h1>
+            </div>
+            <div className="text-2xl font-bold text-white mb-2 animate-fade-in">
+              👨‍⚕️ Doctor Registration
+            </div>
+            <p className="text-gray-300 animate-fade-in animation-delay-1000">
+              Join our platform to help heal minds and change lives
+            </p>
           </div>
-          {errors.languages && <p className="text-red-500 text-sm mt-2">{errors.languages}</p>}
+          
+          {/* Registration Form */}
+          <form
+            onSubmit={handleSubmit}
+            className="bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl p-8 border border-white/20 animate-slide-in-left"
+          >
+            {errors.submit && (
+              <div className="bg-red-500/20 border border-red-400/30 text-red-300 px-4 py-3 rounded-xl mb-6 backdrop-blur-sm animate-fade-in">
+                <div className="flex items-center">
+                  <span className="mr-2">⚠️</span>
+                  {errors.submit}
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              {[
+                { name: 'fullName', icon: '👤', label: 'Full Name', type: 'text' },
+                { name: 'email', icon: '📧', label: 'Email', type: 'email' },
+                { name: 'nic', icon: '🆔', label: 'NIC Number', type: 'text' },
+                { name: 'specialization', icon: '🧠', label: 'Specialization', type: 'text' },
+              ].map((field, index) => (
+                <div key={field.name} className="group animate-fade-in-up" style={{animationDelay: `${index * 100}ms`}}>
+                  <label className="block text-sm font-medium text-gray-200 mb-2">
+                    {field.icon} {field.label} <span className="text-emerald-400">*</span>
+                  </label>
+                  <input
+                    type={field.type}
+                    name={field.name}
+                    placeholder={`Enter your ${field.label.toLowerCase()}`}
+                    value={formData[field.name as keyof typeof formData] as string}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-xl text-white placeholder-gray-300 focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 backdrop-blur-sm group-hover:bg-white/25"
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-200 mb-2">
+                📍 Location <span className="text-emerald-400">*</span>
+              </label>
+              <input
+                type="text"
+                name="location"
+                placeholder="Enter your location (e.g., Colombo, Kandy, Galle)"
+                value={formData.location}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-xl text-white placeholder-gray-300 focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 backdrop-blur-sm hover:bg-white/25"
+              />
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-200 mb-2">
+                ⚧️ Gender <span className="text-emerald-400">*</span>
+              </label>
+              <select
+                name="gender"
+                value={formData.gender}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-xl text-white focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 backdrop-blur-sm hover:bg-white/25"
+              >
+                <option value="male" className="bg-gray-800">Male</option>
+                <option value="female" className="bg-gray-800">Female</option>
+                <option value="other" className="bg-gray-800">Other</option>
+              </select>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              {['password', 'confirmPassword'].map((field, index) => (
+                <div key={field} className="group animate-fade-in-up" style={{animationDelay: `${600 + index * 100}ms`}}>
+                  <label className="block text-sm font-medium text-gray-200 mb-2">
+                    🔒 {field === 'confirmPassword' ? 'Confirm Password' : 'Password'} <span className="text-emerald-400">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    name={field}
+                    placeholder={`Enter your ${field === 'confirmPassword' ? 'password again' : 'password'}`}
+                    value={formData[field as keyof typeof formData] as string}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-xl text-white placeholder-gray-300 focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 backdrop-blur-sm group-hover:bg-white/25"
+                  />
+                  {errors[field] && <p className="text-red-300 text-sm mt-1">{errors[field]}</p>}
+                </div>
+              ))}
+            </div>
+
+            <div className="mb-6 animate-fade-in-up animation-delay-800">
+              <label className="block text-sm font-medium text-gray-200 mb-3">
+                🌐 Languages (Select one or more) <span className="text-emerald-400">*</span>
+              </label>
+              <div className="grid grid-cols-3 gap-3">
+                {['English', 'Sinhala', 'Tamil'].map((language) => (
+                  <label key={language} className="flex items-center group cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.languages.includes(language)}
+                      onChange={() => handleLanguageChange(language)}
+                      className="sr-only"
+                    />
+                    <div className={`w-5 h-5 rounded-md border-2 mr-3 transition-all duration-300 ${
+                      formData.languages.includes(language) 
+                        ? 'bg-emerald-500 border-emerald-500' 
+                        : 'border-white/30 group-hover:border-emerald-400'
+                    }`}>
+                      {formData.languages.includes(language) && (
+                        <div className="text-white text-center text-xs leading-5">✓</div>
+                      )}
+                    </div>
+                    <span className="text-white text-sm group-hover:text-emerald-300 transition-colors duration-300">
+                      {language}
+                    </span>
+                  </label>
+                ))}
+              </div>
+              {errors.languages && <p className="text-red-300 text-sm mt-2">{errors.languages}</p>}
+            </div>
+
+            <div className="mb-6 animate-fade-in-up animation-delay-900">
+              <label className="block text-sm font-medium text-gray-200 mb-2">
+                📄 Upload CV (PDF only) <span className="text-emerald-400">*</span>
+              </label>
+              <div className="relative group">
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  onChange={(e) => setCvFile(e.target.files?.[0] || null)}
+                  required
+                  className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-xl text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-emerald-500 file:text-white hover:file:bg-emerald-400 transition-all duration-300 backdrop-blur-sm group-hover:bg-white/25"
+                />
+                {cvFile && (
+                  <div className="mt-2 text-emerald-300 text-sm">
+                    📎 {cvFile.name}
+                  </div>
+                )}
+              </div>
+              {errors.cv && <p className="text-red-300 text-sm mt-1">{errors.cv}</p>}
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="group relative w-full bg-gradient-to-r from-emerald-500 to-cyan-600 text-white py-3 px-4 rounded-xl font-medium hover:from-emerald-400 hover:to-cyan-500 focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-transparent transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed animate-fade-in-up animation-delay-1000"
+            >
+              <span className="relative z-10 flex items-center justify-center">
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    Submitting Application...
+                  </>
+                ) : (
+                  <>
+                    <span className="mr-2">🚀</span>
+                    Submit Application
+                  </>
+                )}
+              </span>
+              <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-cyan-500 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl"></div>
+            </button>
+
+            <div className="text-center mt-6 animate-fade-in-up animation-delay-2000">
+              <p className="text-sm text-gray-300">
+                Already have an account?{' '}
+                <Link 
+                  to="/login/doctor" 
+                  className="font-medium text-emerald-400 hover:text-emerald-300 transition-colors duration-300 hover:underline"
+                >
+                  ✨ Sign in here
+                </Link>
+              </p>
+            </div>
+
+            <div className="text-center mt-4 animate-fade-in-up animation-delay-3000">
+              <Link 
+                to="/" 
+                className="text-xs text-gray-400 hover:text-gray-300 transition-colors duration-300"
+              >
+                ← Back to role selection
+              </Link>
+            </div>
+          </form>
         </div>
-
-        <input
-          type="file"
-          accept="application/pdf"
-          onChange={(e) => setCvFile(e.target.files?.[0] || null)}
-          required
-          className="w-full mb-2 p-2 border rounded-lg bg-white shadow-sm"
-        />
-        <p className="text-xs text-gray-500 mb-4">Upload your CV (PDF format only)</p>
-        {errors.cv && <p className="text-red-500 text-sm mb-4">{errors.cv}</p>}
-
-        {errors.submit && <p className="text-red-500 text-sm mb-4">{errors.submit}</p>}
-
-        <button
-          type="submit"
-          disabled={loading}
-          className={`w-full py-3 rounded-lg font-semibold transition duration-300 ${
-            loading 
-              ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
-              : 'bg-blue-600 text-white hover:bg-blue-700'
-          }`}
-        >
-          {loading ? 'Signing up...' : 'Signup'}
-        </button>
-      </form>
+      </div>
     </div>
   )
 }
