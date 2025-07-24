@@ -43,10 +43,7 @@ export default function Login() {
 
       {/* Floating Icons */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-16 left-1/4 text-white/10 text-4xl animate-float animation-delay-1000">🔐</div>
-        <div className="absolute top-32 right-1/3 text-white/10 text-3xl animate-float animation-delay-3000">💼</div>
-        <div className="absolute bottom-24 left-1/3 text-white/10 text-3xl animate-float animation-delay-5000">✨</div>
-        <div className="absolute bottom-40 right-1/4 text-white/10 text-4xl animate-float animation-delay-7000">🌟</div>
+        {/* Removed floating emojis for cleaner design */}
       </div>
 
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8">
@@ -59,7 +56,7 @@ export default function Login() {
               </h1>
             </div>
             <div className="text-2xl font-bold text-white mb-2 capitalize animate-fade-in">
-              {role === 'doctor' ? '👨‍⚕️' : '🧠'} {role} Login
+              {role === 'doctor' ? 'Doctor' : 'Patient'} {role} Login
             </div>
             <p className="text-gray-300 animate-fade-in animation-delay-1000">
               Welcome back! Ready to continue your journey?
@@ -71,7 +68,7 @@ export default function Login() {
             {error && (
               <div className="bg-red-500/20 border border-red-400/30 text-red-300 px-4 py-3 rounded-xl mb-6 backdrop-blur-sm animate-fade-in">
                 <div className="flex items-center">
-                  <span className="mr-2">⚠️</span>
+                  <span className="mr-2">Warning</span>
                   {error}
                 </div>
               </div>
@@ -80,7 +77,7 @@ export default function Login() {
             <div className="space-y-6">
               <div className="group">
                 <label htmlFor="email" className="block text-sm font-medium text-gray-200 mb-2">
-                  📧 Email Address
+                  Email Address
                 </label>
                 <input 
                   id="email"
@@ -95,7 +92,7 @@ export default function Login() {
               
               <div className="group">
                 <label htmlFor="password" className="block text-sm font-medium text-gray-200 mb-2">
-                  🔒 Password
+                  Password
                 </label>
                 <input 
                   id="password"
@@ -121,7 +118,7 @@ export default function Login() {
                     </>
                   ) : (
                     <>
-                      <span className="mr-2">🚀</span>
+                      <span className="mr-2">Sign In</span>
                       Sign In
                     </>
                   )}
@@ -137,7 +134,7 @@ export default function Login() {
                   to={`/signup/${role}`} 
                   className="font-medium text-cyan-400 hover:text-cyan-300 transition-colors duration-300 hover:underline"
                 >
-                  ✨ Sign up here
+                  Sign up here
                 </Link>
               </p>
             </div>

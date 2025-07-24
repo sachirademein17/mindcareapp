@@ -153,7 +153,7 @@ const IssuePrescription = () => {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       })
 
-      alert(`✅ ${prescriptions.length} prescription(s) issued successfully!`)
+      alert(`Prescription(s) issued successfully! (${prescriptions.length})`)
       
       // Reset form
       setPrescriptions([{
@@ -171,7 +171,7 @@ const IssuePrescription = () => {
       navigate('/doctor/dashboard')
     } catch (error: any) {
       console.error('Error issuing prescription:', error)
-      alert(`❌ Failed to issue prescription: ${error.response?.data?.error || error.message}`)
+      alert(`Failed to issue prescription: ${error.response?.data?.error || error.message}`)
     } finally {
       setLoading(false)
     }
@@ -201,7 +201,7 @@ const IssuePrescription = () => {
             Issue Prescription
           </h1>
           <p className="text-gray-300 text-lg">
-            💊 Create a detailed prescription for your patients
+            Create a detailed prescription for your patients
           </p>
         </div>
 
@@ -209,13 +209,13 @@ const IssuePrescription = () => {
           {/* Patient Selection */}
           <div className="bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl p-8 border border-white/20 mb-8 animate-slide-in-up">
             <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
-              <span className="mr-3">👥</span>
+              <span className="mr-3">Patients</span>
               Select Patient
             </h2>
             
             {enrollments.length === 0 ? (
               <div className="text-center py-8">
-                <div className="text-4xl mb-4">👥</div>
+                <div className="text-4xl mb-4">Patients</div>
                 <p className="text-gray-300">No patients enrolled yet.</p>
               </div>
             ) : (
@@ -250,7 +250,7 @@ const IssuePrescription = () => {
             <form onSubmit={handleSubmit} className="bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl p-8 border border-white/20 animate-slide-in-up">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-white flex items-center">
-                  <span className="mr-3">💊</span>
+                  <span className="mr-3">Prescription</span>
                   Prescription Details for {selectedPatient.name}
                 </h2>
                 <button
@@ -258,7 +258,7 @@ const IssuePrescription = () => {
                   onClick={addPrescription}
                   className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-medium hover:from-blue-400 hover:to-purple-500 transition-all duration-300 transform hover:scale-105 flex items-center"
                 >
-                  <span className="mr-2">➕</span>
+                  <span className="mr-2">Add</span>
                   Add Another Prescription
                 </button>
               </div>
@@ -277,7 +277,7 @@ const IssuePrescription = () => {
                           onClick={() => removePrescription(prescription.id)}
                           className="px-3 py-1 bg-red-500/20 border border-red-400/30 text-red-300 rounded-lg hover:bg-red-500/30 transition-all duration-300 flex items-center"
                         >
-                          <span className="mr-1">🗑️</span>
+                          <span className="mr-1">Remove</span>
                           Remove
                         </button>
                       )}
@@ -287,7 +287,7 @@ const IssuePrescription = () => {
                       {/* Drug Name */}
                       <div>
                         <label htmlFor={`drugName_${prescription.id}`} className="block text-sm font-medium text-gray-200 mb-2">
-                          💉 Drug/Medication Name *
+                          Drug/Medication Name *
                         </label>
                         <input
                           type="text"
@@ -306,7 +306,7 @@ const IssuePrescription = () => {
                       {/* Dosage */}
                       <div>
                         <label htmlFor={`dosage_${prescription.id}`} className="block text-sm font-medium text-gray-200 mb-2">
-                          ⚖️ Dosage/Strength *
+                          Dosage/Strength *
                         </label>
                         <input
                           type="text"
@@ -349,7 +349,7 @@ const IssuePrescription = () => {
                       {/* Duration */}
                       <div>
                         <label htmlFor={`duration_${prescription.id}`} className="block text-sm font-medium text-gray-200 mb-2">
-                          📅 Duration *
+                          Duration *
                         </label>
                         <input
                           type="text"
@@ -369,7 +369,7 @@ const IssuePrescription = () => {
                     {/* Instructions */}
                     <div className="mt-6">
                       <label htmlFor={`instructions_${prescription.id}`} className="block text-sm font-medium text-gray-200 mb-2">
-                        📋 Instructions for Use *
+                        Instructions for Use *
                       </label>
                       <textarea
                         id={`instructions_${prescription.id}`}
@@ -388,7 +388,7 @@ const IssuePrescription = () => {
                     {/* Additional Notes */}
                     <div className="mt-6">
                       <label htmlFor={`notes_${prescription.id}`} className="block text-sm font-medium text-gray-200 mb-2">
-                        📝 Additional Notes (Optional)
+                        Additional Notes (Optional)
                       </label>
                       <textarea
                         id={`notes_${prescription.id}`}
@@ -432,7 +432,7 @@ const IssuePrescription = () => {
                     </>
                   ) : (
                     <>
-                      <span className="mr-2">💊</span>
+                      <span className="mr-2">Issue Prescription</span>
                       Issue {prescriptions.length} Prescription{prescriptions.length > 1 ? 's' : ''}
                     </>
                   )}

@@ -28,7 +28,7 @@ export default function SignupPatient() {
       }
       
       await axios.post('http://localhost:5000/auth/patient/signup', form)
-      alert('🎉 Registration successful! Welcome to MindCare!')
+      alert('Registration successful! Welcome to MindCare!')
       navigate('/login/patient')
     } catch (err: any) {
       console.error('Signup error:', err)
@@ -50,10 +50,7 @@ export default function SignupPatient() {
 
       {/* Floating Icons */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-16 left-1/4 text-white/10 text-4xl animate-float animation-delay-1000">🧠</div>
-        <div className="absolute top-32 right-1/3 text-white/10 text-3xl animate-float animation-delay-3000">💊</div>
-        <div className="absolute bottom-24 left-1/3 text-white/10 text-3xl animate-float animation-delay-5000">🌟</div>
-        <div className="absolute bottom-40 right-1/4 text-white/10 text-4xl animate-float animation-delay-7000">✨</div>
+        {/* Removed floating emojis for cleaner design */}
       </div>
 
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-8">
@@ -88,7 +85,7 @@ export default function SignupPatient() {
               {['name', 'email', 'nic', 'dob', 'phone'].map((field, index) => (
                 <div key={field} className="group animate-fade-in-up" style={{animationDelay: `${index * 100}ms`}}>
                   <label className="block text-sm font-medium text-gray-200 mb-2 capitalize">
-                    {field === 'nic' ? '🆔 NIC' : field === 'dob' ? '📅 Date of Birth' : field === 'name' ? '👤 Name' : field === 'email' ? '📧 Email' : '📱 Phone'} 
+                    {field === 'nic' ? 'NIC' : field === 'dob' ? 'Date of Birth' : field === 'name' ? 'Name' : field === 'email' ? 'Email' : 'Phone'} 
                     {['name', 'email', 'nic'].includes(field) && <span className="text-rose-400 ml-1">*</span>}
                   </label>
                   <input
@@ -104,7 +101,7 @@ export default function SignupPatient() {
               ))}
               
               <div className="group animate-fade-in-up" style={{animationDelay: '500ms'}}>
-                <label className="block text-sm font-medium text-gray-200 mb-2">⚧️ Gender</label>
+                <label className="block text-sm font-medium text-gray-200 mb-2">Gender</label>
                 <select 
                   name="gender" 
                   value={form.gender} 
@@ -123,7 +120,7 @@ export default function SignupPatient() {
               {['password', 'confirmPassword'].map((field, index) => (
                 <div key={field} className="group animate-fade-in-up" style={{animationDelay: `${600 + index * 100}ms`}}>
                   <label className="block text-sm font-medium text-gray-200 mb-2">
-                    🔒 {field === 'confirmPassword' ? 'Confirm Password' : 'Password'} <span className="text-rose-400">*</span>
+                    {field === 'confirmPassword' ? 'Confirm Password' : 'Password'} <span className="text-rose-400">*</span>
                   </label>
                   <input
                     name={field}
@@ -151,7 +148,7 @@ export default function SignupPatient() {
                   </>
                 ) : (
                   <>
-                    <span className="mr-2">🚀</span>
+                    <span className="mr-2">Sign Up</span>
                     Create Account
                   </>
                 )}
@@ -166,7 +163,7 @@ export default function SignupPatient() {
                   to="/login/patient" 
                   className="font-medium text-rose-400 hover:text-rose-300 transition-colors duration-300 hover:underline"
                 >
-                  ✨ Sign in here
+                  Sign in here
                 </Link>
               </p>
             </div>

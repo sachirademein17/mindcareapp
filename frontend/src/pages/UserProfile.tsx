@@ -208,7 +208,7 @@ export default function UserProfile() {
             My Account
           </h1>
           <p className="text-gray-300 text-lg">
-            👤 Manage your profile and account settings
+            Manage your profile and account settings
           </p>
         </div>
 
@@ -229,7 +229,7 @@ export default function UserProfile() {
           <div className="bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl p-8 border border-white/20">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-white flex items-center">
-                <span className="mr-3">👤</span>
+                <span className="mr-3">Profile</span>
                 Profile Information
               </h2>
               <div className="flex items-center space-x-3">
@@ -371,7 +371,7 @@ export default function UserProfile() {
           {/* Account Actions */}
           <div className="bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl p-8 border border-white/20">
             <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
-              <span className="mr-3">🔧</span>
+              <span className="mr-3">Settings</span>
               Account Actions
             </h2>
             
@@ -451,7 +451,7 @@ export default function UserProfile() {
                 {showDeleteConfirm && (
                   <div className="mt-4 space-y-3">
                     <div className="p-4 bg-red-500/20 border border-red-400/30 rounded-lg">
-                      <p className="text-red-300 text-sm font-medium">⚠️ Warning</p>
+                      <p className="text-red-300 text-sm font-medium">Warning</p>
                       <p className="text-red-400 text-sm">This action cannot be undone. All your data will be permanently deleted.</p>
                     </div>
                     <input
