@@ -1,0 +1,42 @@
+# Snyk Security Configuration
+# This file configures Snyk for dependency vulnerability scanning
+
+# .snyk file for Mental Health Platform
+version: v1.0.0
+
+# Ignore specific vulnerabilities (with justification)
+ignore:
+  # Example: Ignore a low-severity vulnerability in a dev dependency
+  # SNYK-JS-LODASH-567746:
+  #   - '*':
+  #       reason: Low severity, dev dependency only
+  #       expires: '2025-12-31T23:59:59.999Z'
+
+# Language-specific settings
+language-settings:
+  javascript:
+    # Scan package.json and package-lock.json
+    packageManager: npm
+    
+# Patches - automatic fixes for vulnerabilities
+patches: {}
+
+# Custom severity thresholds
+# Fail build on:
+# - High and Critical vulnerabilities
+# - Medium vulnerabilities in production dependencies
+severity-threshold: medium
+
+# Scan configuration
+exclude:
+  # Exclude test files and documentation
+  - tests/**
+  - docs/**
+  - "*.md"
+  - ".github/**"
+
+# Monitor configuration for continuous monitoring
+monitor: true
+
+# Organization settings (when using Snyk CLI)
+# org: your-org-name
