@@ -2,13 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
+
 /* Custom base styles */
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Font families */
+.font-inter {
+  font-family: 'Inter', sans-serif;
+}
+
+.font-poppins {
+  font-family: 'Poppins', sans-serif;
 }
 
 /* Custom Animations for SelectRole */
@@ -179,9 +191,18 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.125);
 }
 
-/* Gradient text animation */
+/* Enhanced Glass morphism with purple tint */
+.glass-purple {
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  background: rgba(139, 69, 255, 0.1);
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  box-shadow: 0 8px 32px rgba(139, 69, 255, 0.1);
+}
+
+/* Purple gradient text animation */
 .gradient-text {
-  background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+  background: linear-gradient(-45deg, #8b5cf6, #ec4899, #3b82f6, #6366f1);
   background-size: 400% 400%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -199,6 +220,87 @@ body {
   100% {
     background-position: 0% 50%;
   }
+}
+
+/* Pulse animation */
+.pulse-purple {
+  animation: pulse-purple 2s infinite;
+}
+
+@keyframes pulse-purple {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(139, 69, 255, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(139, 69, 255, 0);
+  }
+}
+
+/* Bounce on hover */
+.hover-bounce:hover {
+  animation: bounce 0.6s ease-in-out;
+}
+
+@keyframes bounce {
+  0%, 20%, 60%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  80% {
+    transform: translateY(-5px);
+  }
+}
+
+/* Smooth glow effect */
+.glow-purple {
+  box-shadow: 0 0 20px rgba(139, 69, 255, 0.3);
+  transition: box-shadow 0.3s ease-in-out;
+}
+
+.glow-purple:hover {
+  box-shadow: 0 0 30px rgba(139, 69, 255, 0.6);
+}
+
+/* Shimmer loading effect */
+.shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Ripple effect on click */
+.ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transition: width 0.6s, height 0.6s;
+  transform: translate(-50%, -50%);
+  z-index: 0;
+}
+
+.ripple:active::before {
+  width: 300px;
+  height: 300px;
 }
 
 /* Hover effects */
