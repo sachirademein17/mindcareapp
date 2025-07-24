@@ -88,7 +88,7 @@ const PrescriptionViewer: React.FC<PrescriptionViewerProps> = ({
           e.preventDefault();
           e.stopPropagation();
           setIsBlurred(true);
-          alert('🚨 SECURITY ALERT: Unauthorized action detected! Screen blurred for protection.');
+          alert('SECURITY ALERT: Unauthorized action detected! Screen blurred for protection.');
           setTimeout(() => setIsBlurred(false), 3000);
           return false;
         }
@@ -98,7 +98,7 @@ const PrescriptionViewer: React.FC<PrescriptionViewerProps> = ({
       const handleVisibilityChange = () => {
         if (document.hidden) {
           setIsBlurred(true);
-          alert('🔒 SECURITY: Window focus lost. Screen blurred for protection.');
+          alert('SECURITY: Window focus lost. Screen blurred for protection.');
           setTimeout(() => setIsBlurred(false), 2000);
         }
       };
@@ -155,14 +155,14 @@ const PrescriptionViewer: React.FC<PrescriptionViewerProps> = ({
       {/* Security Overlay */}
       <div className="absolute inset-0 bg-black bg-opacity-50 pointer-events-none">
         <div className="absolute top-4 left-4 text-white text-sm font-medium bg-red-600 px-3 py-1 rounded-full">
-          🔒 Secure View Mode
+          Secure View Mode
         </div>
         <div className="absolute top-4 right-4 text-white text-sm font-medium">
           <div className="bg-red-600 px-3 py-1 rounded-full mb-1">
-            🔒 Secure View Active
+            Secure View Active
           </div>
           <div className="bg-orange-600 px-2 py-1 rounded text-xs">
-            🛡️ Anti-screenshot protection
+            Anti-screenshot protection
           </div>
         </div>
       </div>

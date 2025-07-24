@@ -17,10 +17,7 @@ export default function SelectRole() {
 
       {/* Floating Medical Icons */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-16 left-1/4 text-white/10 text-4xl animate-bounce animation-delay-1000">⚕️</div>
-        <div className="absolute top-32 right-1/3 text-white/10 text-3xl animate-bounce animation-delay-3000">🩺</div>
-        <div className="absolute bottom-24 left-1/3 text-white/10 text-3xl animate-bounce animation-delay-5000">💊</div>
-        <div className="absolute bottom-40 right-1/4 text-white/10 text-4xl animate-bounce animation-delay-7000">🏥</div>
+        {/* Removed floating emojis for cleaner design */}
       </div>
 
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4">
@@ -69,7 +66,7 @@ export default function SelectRole() {
                 </p>
                 
                 <div className="flex items-center space-x-2 text-white/80 text-sm">
-                  <span>🔬</span>
+                  <span>Research</span>
                   <span>Professional Dashboard</span>
                 </div>
                 <div className="flex items-center space-x-2 text-white/80 text-sm mt-2">
@@ -101,7 +98,7 @@ export default function SelectRole() {
               <div className="relative z-10 flex flex-col items-center text-center">
                 <div className={`mb-6 transition-transform duration-500 ${hoveredCard === 'patient' ? 'rotate-12 scale-110' : ''}`}>
                   <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-md">
-                    <span className="text-5xl">🧠</span>
+                    <span className="text-5xl">Mind</span>
                   </div>
                 </div>
                 
@@ -135,7 +132,7 @@ export default function SelectRole() {
         {/* Footer Message */}
         <div className="mt-16 text-center animate-fade-in-up animation-delay-2000">
           <p className="text-gray-400 text-lg">
-            🌟 Your mental health journey starts here 🌟
+            Your mental health journey starts here
           </p>
         </div>
       </div>

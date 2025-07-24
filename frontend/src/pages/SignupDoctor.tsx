@@ -84,7 +84,7 @@ export default function SignupDoctor() {
       await axios.post('http://localhost:5000/auth/doctor/signup', payload, {
         headers: { 'Content-Type': 'multipart/form-data' }
       })
-      alert('🎉 Signup successful! Please await admin approval.')
+      alert('Signup successful! Please await admin approval.')
       navigate('/login/doctor')
     } catch (err: any) {
       setErrors({ submit: err.response?.data?.error || 'Signup failed' })
@@ -151,7 +151,7 @@ export default function SignupDoctor() {
               ].map((field, index) => (
                 <div key={field.name} className="group animate-fade-in-up" style={{animationDelay: `${index * 100}ms`}}>
                   <label className="block text-sm font-medium text-gray-200 mb-2">
-                    {field.icon} {field.label} <span className="text-emerald-400">*</span>
+                    {field.label} <span className="text-emerald-400">*</span>
                   </label>
                   <input
                     type={field.type}
@@ -202,7 +202,7 @@ export default function SignupDoctor() {
               {['password', 'confirmPassword'].map((field, index) => (
                 <div key={field} className="group animate-fade-in-up" style={{animationDelay: `${600 + index * 100}ms`}}>
                   <label className="block text-sm font-medium text-gray-200 mb-2">
-                    🔒 {field === 'confirmPassword' ? 'Confirm Password' : 'Password'} <span className="text-emerald-400">*</span>
+                    {field === 'confirmPassword' ? 'Confirm Password' : 'Password'} <span className="text-emerald-400">*</span>
                   </label>
                   <input
                     type="password"
@@ -283,7 +283,7 @@ export default function SignupDoctor() {
                   </>
                 ) : (
                   <>
-                    <span className="mr-2">🚀</span>
+                    <span className="mr-2">Sign Up</span>
                     Submit Application
                   </>
                 )}
@@ -298,7 +298,7 @@ export default function SignupDoctor() {
                   to="/login/doctor" 
                   className="font-medium text-emerald-400 hover:text-emerald-300 transition-colors duration-300 hover:underline"
                 >
-                  ✨ Sign in here
+                  Sign in here
                 </Link>
               </p>
             </div>
