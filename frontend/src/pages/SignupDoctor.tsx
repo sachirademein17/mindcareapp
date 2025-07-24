@@ -94,36 +94,33 @@ export default function SignupDoctor() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-900 relative overflow-hidden">
-      {/* Animated Background Elements */}
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900 relative overflow-hidden font-inter">
+      {/* Subtle Background Elements */}
       <div className="absolute inset-0">
-        <div className="absolute top-20 left-10 w-32 h-32 bg-emerald-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
-        <div className="absolute top-40 right-20 w-40 h-40 bg-teal-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-2000"></div>
-        <div className="absolute bottom-20 left-20 w-36 h-36 bg-cyan-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-4000"></div>
-        <div className="absolute bottom-40 right-10 w-28 h-28 bg-blue-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-6000"></div>
+        <div className="absolute top-20 left-10 w-32 h-32 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-10"></div>
+        <div className="absolute top-40 right-20 w-40 h-40 bg-pink-400 rounded-full mix-blend-multiply filter blur-xl opacity-10"></div>
+        <div className="absolute bottom-20 left-20 w-36 h-36 bg-indigo-400 rounded-full mix-blend-multiply filter blur-xl opacity-10"></div>
+        <div className="absolute bottom-40 right-10 w-28 h-28 bg-violet-400 rounded-full mix-blend-multiply filter blur-xl opacity-10"></div>
       </div>
 
       {/* Floating Icons */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-16 left-1/4 text-white/10 text-4xl animate-float animation-delay-1000">👨‍⚕️</div>
-        <div className="absolute top-32 right-1/3 text-white/10 text-3xl animate-float animation-delay-3000">🩺</div>
-        <div className="absolute bottom-24 left-1/3 text-white/10 text-3xl animate-float animation-delay-5000">📋</div>
-        <div className="absolute bottom-40 right-1/4 text-white/10 text-4xl animate-float animation-delay-7000">⚕️</div>
+        {/* Removed floating emojis for cleaner design */}
       </div>
 
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-2xl animate-fade-in-up">
+        <div className="w-full max-w-2xl">
           {/* Header Section */}
-          <div className="text-center mb-8 animate-fade-in-down">
+          <div className="text-center mb-8">
             <div className="mb-6">
-              <h1 className="text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent animate-pulse">
+              <h1 className="text-4xl md:text-5xl font-extrabold font-poppins gradient-text hover:scale-105 transform transition-all duration-300">
                 MindCare
               </h1>
             </div>
-            <div className="text-2xl font-bold text-white mb-2 animate-fade-in">
-              👨‍⚕️ Doctor Registration
+            <div className="text-2xl font-bold text-white mb-2 font-poppins">
+              Doctor Registration
             </div>
-            <p className="text-gray-300 animate-fade-in animation-delay-1000">
+            <p className="text-purple-200">
               Join our platform to help heal minds and change lives
             </p>
           </div>

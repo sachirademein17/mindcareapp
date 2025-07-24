@@ -185,12 +185,13 @@ export default function UserProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-900 relative overflow-hidden">
-      {/* Animated Background Elements */}
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900 relative overflow-hidden font-inter">
+      {/* Subtle Background Elements */}
       <div className="absolute inset-0">
-        <div className="absolute top-20 left-10 w-32 h-32 bg-emerald-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
-        <div className="absolute top-40 right-20 w-40 h-40 bg-teal-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-2000"></div>
-        <div className="absolute bottom-20 left-20 w-36 h-36 bg-cyan-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-4000"></div>
+        <div className="absolute top-20 left-10 w-32 h-32 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-10"></div>
+        <div className="absolute top-40 right-20 w-40 h-40 bg-pink-400 rounded-full mix-blend-multiply filter blur-xl opacity-10"></div>
+        <div className="absolute bottom-20 left-20 w-36 h-36 bg-indigo-400 rounded-full mix-blend-multiply filter blur-xl opacity-10"></div>
+        <div className="absolute top-1/2 left-1/2 w-20 h-20 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full mix-blend-multiply filter blur-xl opacity-8"></div>
       </div>
 
       {/* Content */}
@@ -199,15 +200,15 @@ export default function UserProfile() {
         <div className="text-center mb-8 animate-fade-in">
           <button 
             onClick={() => navigate(getDashboardPath())}
-            className="inline-flex items-center text-emerald-300 hover:text-emerald-200 transition-colors duration-300 mb-4 group"
+            className="group inline-flex items-center text-purple-300 hover:text-pink-300 transition-all duration-500 mb-4 hover:scale-105 transform"
           >
-            <span className="mr-2 group-hover:translate-x-[-4px] transition-transform duration-300">←</span>
-            Back to Dashboard
+            <span className="mr-2 group-hover:translate-x-[-6px] group-hover:scale-110 transition-all duration-300 text-xl">←</span>
+            <span className="font-medium tracking-wide">Back to Dashboard</span>
           </button>
-          <h1 className="text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent mb-4">
+          <h1 className="text-5xl md:text-6xl font-black bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400 bg-clip-text text-transparent mb-4 animate-pulse hover:scale-105 transition-transform duration-500 font-poppins">
             My Account
           </h1>
-          <p className="text-gray-300 text-lg">
+          <p className="text-gray-300 text-xl font-light tracking-wide opacity-90">
             Manage your profile and account settings
           </p>
         </div>
@@ -226,22 +227,22 @@ export default function UserProfile() {
 
         <div className="max-w-2xl mx-auto space-y-6">
           {/* Profile Information */}
-          <div className="bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl p-8 border border-white/20">
+          <div className="bg-white/10 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white/20 hover:border-purple-400/50 transition-all duration-500 hover:shadow-purple-500/25 hover:shadow-2xl transform hover:scale-[1.02]">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-white flex items-center">
-                <span className="mr-3">Profile</span>
-                Profile Information
+              <h2 className="text-3xl font-bold text-white flex items-center group">
+                <span className="mr-3 text-purple-400 group-hover:rotate-12 transition-transform duration-300">👤</span>
+                <span className="bg-gradient-to-r from-purple-300 to-pink-300 bg-clip-text text-transparent">Profile Information</span>
               </h2>
               <div className="flex items-center space-x-3">
-                <span className={`px-3 py-1 rounded-full text-white text-sm font-medium ${getRoleBadgeColor(user?.role || '')}`}>
+                <span className={`px-4 py-2 rounded-full text-white text-sm font-semibold shadow-lg transform hover:scale-110 transition-all duration-300 ${getRoleBadgeColor(user?.role || '')} hover:shadow-lg`}>
                   {user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1)}
                 </span>
                 {!editing && (
                   <button
                     onClick={() => setEditing(true)}
-                    className="px-4 py-2 bg-blue-500/20 border border-blue-400/30 text-blue-300 rounded-lg hover:bg-blue-500/30 transition-all duration-300"
+                    className="px-6 py-3 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-400/30 text-purple-300 rounded-xl hover:from-purple-500/30 hover:to-pink-500/30 transition-all duration-500 transform hover:scale-105 hover:shadow-lg font-medium"
                   >
-                    Edit
+                    Edit Profile
                   </button>
                 )}
               </div>
@@ -249,86 +250,86 @@ export default function UserProfile() {
 
             {editing ? (
               <form onSubmit={handleUpdateProfile} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-200 mb-2">Full Name</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="group">
+                    <label className="block text-sm font-semibold text-purple-200 mb-3 tracking-wide">Full Name</label>
                     <input
                       type="text"
                       name="name"
                       value={formData.name}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-xl text-white placeholder-gray-300 focus:ring-2 focus:ring-emerald-400 focus:border-transparent"
+                      className="w-full px-6 py-4 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-gray-300 focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-300 hover:bg-white/15 group-hover:border-purple-400/50 backdrop-blur-sm"
                       required
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-200 mb-2">Email</label>
+                  <div className="group">
+                    <label className="block text-sm font-semibold text-purple-200 mb-3 tracking-wide">Email</label>
                     <input
                       type="email"
                       name="email"
                       value={formData.email}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-xl text-white placeholder-gray-300 focus:ring-2 focus:ring-emerald-400 focus:border-transparent"
+                      className="w-full px-6 py-4 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-gray-300 focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-300 hover:bg-white/15 group-hover:border-purple-400/50 backdrop-blur-sm"
                       required
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-200 mb-2">NIC</label>
+                  <div className="group">
+                    <label className="block text-sm font-semibold text-purple-200 mb-3 tracking-wide">NIC</label>
                     <input
                       type="text"
                       name="nic"
                       value={formData.nic}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-xl text-white placeholder-gray-300 focus:ring-2 focus:ring-emerald-400 focus:border-transparent"
+                      className="w-full px-6 py-4 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-gray-300 focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-300 hover:bg-white/15 group-hover:border-purple-400/50 backdrop-blur-sm"
                       required
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-200 mb-2">Gender</label>
+                  <div className="group">
+                    <label className="block text-sm font-semibold text-purple-200 mb-3 tracking-wide">Gender</label>
                     <select
                       name="gender"
                       value={formData.gender}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-xl text-white focus:ring-2 focus:ring-emerald-400 focus:border-transparent"
+                      className="w-full px-6 py-4 bg-white/10 border border-white/20 rounded-2xl text-white focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-300 hover:bg-white/15 group-hover:border-purple-400/50 backdrop-blur-sm"
                     >
-                      <option value="" className="bg-gray-800">Select Gender</option>
-                      <option value="Male" className="bg-gray-800">Male</option>
-                      <option value="Female" className="bg-gray-800">Female</option>
-                      <option value="Other" className="bg-gray-800">Other</option>
+                      <option value="" className="bg-slate-800">Select Gender</option>
+                      <option value="Male" className="bg-slate-800">Male</option>
+                      <option value="Female" className="bg-slate-800">Female</option>
+                      <option value="Other" className="bg-slate-800">Other</option>
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-200 mb-2">Date of Birth</label>
+                  <div className="group">
+                    <label className="block text-sm font-semibold text-purple-200 mb-3 tracking-wide">Date of Birth</label>
                     <input
                       type="date"
                       name="dob"
                       value={formData.dob}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-xl text-white focus:ring-2 focus:ring-emerald-400 focus:border-transparent"
+                      className="w-full px-6 py-4 bg-white/10 border border-white/20 rounded-2xl text-white focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-300 hover:bg-white/15 group-hover:border-purple-400/50 backdrop-blur-sm"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-200 mb-2">Phone</label>
+                  <div className="group">
+                    <label className="block text-sm font-semibold text-purple-200 mb-3 tracking-wide">Phone</label>
                     <input
                       type="tel"
                       name="phone"
                       value={formData.phone}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-xl text-white placeholder-gray-300 focus:ring-2 focus:ring-emerald-400 focus:border-transparent"
+                      className="w-full px-6 py-4 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-gray-300 focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-300 hover:bg-white/15 group-hover:border-purple-400/50 backdrop-blur-sm"
                     />
                   </div>
                 </div>
-                <div className="flex justify-end space-x-3">
+                <div className="flex justify-end space-x-4 pt-4">
                   <button
                     type="button"
                     onClick={() => setEditing(false)}
-                    className="px-6 py-3 border border-gray-300 rounded-xl text-gray-300 hover:bg-white/10 transition-all duration-300"
+                    className="px-8 py-4 border border-gray-300/50 rounded-2xl text-gray-300 hover:bg-white/10 transition-all duration-300 transform hover:scale-105 hover:border-gray-200 font-medium"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-medium hover:from-emerald-400 hover:to-teal-500 transition-all duration-300"
+                    className="px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-2xl font-semibold hover:from-purple-400 hover:to-pink-500 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25"
                   >
                     Save Changes
                   </button>
@@ -369,10 +370,10 @@ export default function UserProfile() {
           </div>
 
           {/* Account Actions */}
-          <div className="bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl p-8 border border-white/20">
-            <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
-              <span className="mr-3">Settings</span>
-              Account Actions
+          <div className="bg-white/10 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white/20 hover:border-purple-400/50 transition-all duration-500 hover:shadow-purple-500/25 hover:shadow-2xl transform hover:scale-[1.02]">
+            <h2 className="text-3xl font-bold text-white mb-8 flex items-center group">
+              <span className="mr-3 text-purple-400 group-hover:rotate-12 transition-transform duration-300">⚙️</span>
+              <span className="bg-gradient-to-r from-purple-300 to-pink-300 bg-clip-text text-transparent">Account Actions</span>
             </h2>
             
             <div className="space-y-4">
