@@ -6,11 +6,17 @@ interface DoctorDetailsModel extends Model<InferAttributes<DoctorDetailsModel>, 
   id: CreationOptional<number>
   userId: number
   specialization: string
-  gender: string
-  location: string
-  languages: string // JSON string array
+  licenseNumber?: string
+  experience?: number
+  district?: string
+  qualifications?: string
+  gender?: string
+  location?: string
+  languages?: string // JSON string array
   approved: CreationOptional<boolean>
   cvPath?: string
+  licensePath?: string
+  bio?: string
 }
 
 export const DoctorDetails = sequelize.define<DoctorDetailsModel>('DoctorDetails', {
@@ -31,9 +37,25 @@ export const DoctorDetails = sequelize.define<DoctorDetailsModel>('DoctorDetails
     type: DataTypes.STRING,
     allowNull: false
   },
+  licenseNumber: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  experience: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  district: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  qualifications: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
   gender: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: true
   },
   location: {
     type: DataTypes.STRING,
@@ -41,7 +63,7 @@ export const DoctorDetails = sequelize.define<DoctorDetailsModel>('DoctorDetails
   },
   languages: {
     type: DataTypes.TEXT, // Changed to TEXT to store JSON string
-    allowNull: false
+    allowNull: true
   },
   approved: { 
     type: DataTypes.BOOLEAN, 
@@ -49,6 +71,14 @@ export const DoctorDetails = sequelize.define<DoctorDetailsModel>('DoctorDetails
   },
   cvPath: {
     type: DataTypes.STRING,
+    allowNull: true
+  },
+  licensePath: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  bio: {
+    type: DataTypes.TEXT,
     allowNull: true
   }
 })

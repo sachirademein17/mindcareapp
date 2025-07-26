@@ -1,69 +1,111 @@
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
 import axios from 'axios'
-import '../../styles/security.css'
+import { Link } from 'react-router-dom'
+import { createApiUrl } from '../../config/api'
 
-const ViewPrescriptions = () => {
-  const [prescriptions, setPrescriptions] = useState([])
+const ViewPrescriptions: React.FC = () => {
+  const [prescriptions, setPrescriptions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [securityAlerts, setSecurityAlerts] = useState(0)
+  const [selectedPrescription, setSelectedPrescription] = useState<any>(null)
+  const [showDetails, setShowDetails] = useState(false)
+  const [groupedPrescriptions, setGroupedPrescriptions] = useState<{[key: string]: any[]}>({})
+  const [selectedDoctorPrescriptions, setSelectedDoctorPrescriptions] = useState<any[]>([])
+  const [showDoctorView, setShowDoctorView] = useState(false)
+  const [selectedDoctorInfo, setSelectedDoctorInfo] = useState<any>(null)
+
+  // Group prescriptions by doctor
+  const groupPrescriptionsByDoctor = (prescriptions: any[]) => {
+    const grouped: {[key: string]: any[]} = {}
+    
+    prescriptions.forEach((prescription) => {
+      const doctorId = prescription.Enrollment?.Doctor?.id || 'unknown'
+      const doctorName = prescription.Enrollment?.Doctor?.name || 'Unknown Doctor'
+      const doctorKey = `${doctorId}-${doctorName}`
+      
+      if (!grouped[doctorKey]) {
+        grouped[doctorKey] = []
+      }
+      grouped[doctorKey].push(prescription)
+    })
+    
+    return grouped
+  }
+
+  const handleViewDetails = (prescription: any) => {
+    setSelectedPrescription(prescription)
+    setShowDetails(true)
+  }
+
+  const handleViewAllDoctorMedications = (doctorPrescriptions: any[]) => {
+    setSelectedDoctorPrescriptions(doctorPrescriptions)
+    setSelectedDoctorInfo(doctorPrescriptions[0]?.Enrollment?.Doctor)
+    setShowDoctorView(true)
+  }
+
+  const closeDetails = () => {
+    setSelectedPrescription(null)
+    setShowDetails(false)
+  }
+
+  const closeDoctorView = () => {
+    setSelectedDoctorPrescriptions([])
+    setSelectedDoctorInfo(null)
+    setShowDoctorView(false)
+  }
 
   useEffect(() => {
-    // 🔒 Enhanced Security System
+    console.log('🔍 ViewPrescriptions component mounted')
+
     const initSecurity = () => {
-      // Disable context menu
-      const handleContextMenu = (e: Event) => {
+      console.log('🔒 Initializing security measures')
+      
+      const handleContextMenu = (e: MouseEvent) => {
         e.preventDefault()
         setSecurityAlerts(prev => prev + 1)
-        alert('🔒 Right-click disabled for medical privacy')
+        console.log('🚫 Context menu blocked')
       }
 
-      // Disable keyboard shortcuts
       const handleKeyDown = (e: KeyboardEvent) => {
+        // Block common screenshot/copy keys
         if (
-          e.key === 'PrintScreen' ||
-          (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'C' || e.key === 'J')) ||
-          (e.ctrlKey && e.key === 'U') ||
-          (e.metaKey && e.shiftKey && (e.key === 'S' || e.key === '3' || e.key === '4')) ||
+          (e.ctrlKey && (e.key === 's' || e.key === 'a' || e.key === 'c' || e.key === 'v' || e.key === 'p')) ||
           e.key === 'F12' ||
-          (e.ctrlKey && e.key === 's')
+          e.key === 'PrintScreen' ||
+          (e.ctrlKey && e.shiftKey && e.key === 'I') ||
+          (e.ctrlKey && e.shiftKey && e.key === 'J') ||
+          (e.ctrlKey && e.key === 'U')
         ) {
           e.preventDefault()
-          e.stopPropagation()
           setSecurityAlerts(prev => prev + 1)
-          alert('🚨 Screenshot/DevTools blocked for medical privacy!')
-          return false
+          console.log('🚫 Security key blocked:', e.key)
         }
       }
 
-      // Monitor page visibility changes
       const handleVisibilityChange = () => {
-        if (document.hidden) {
+        if (document.visibilityState === 'hidden') {
+          console.log('🔒 Page hidden - potential screenshot attempt')
           setSecurityAlerts(prev => prev + 1)
         }
       }
 
-      // Block text selection and dragging
       const blockSelection = (e: Event) => {
         e.preventDefault()
-        setSecurityAlerts(prev => prev + 1)
+        return false
       }
 
-      // Apply all event listeners
+      const handleCopy = (e: ClipboardEvent) => {
+        e.preventDefault()
+        setSecurityAlerts(prev => prev + 1)
+        console.log('🚫 Copy blocked')
+      }
+
       document.addEventListener('contextmenu', handleContextMenu)
       document.addEventListener('keydown', handleKeyDown, true)
       document.addEventListener('keyup', handleKeyDown, true)
       document.addEventListener('visibilitychange', handleVisibilityChange)
       document.addEventListener('selectstart', blockSelection)
       document.addEventListener('dragstart', blockSelection)
-
-      // Add copy prevention
-      const handleCopy = (e: Event) => {
-        e.preventDefault()
-        setSecurityAlerts(prev => prev + 1)
-        alert('🔒 Copying disabled for medical privacy')
-      }
-
       document.addEventListener('copy', handleCopy)
 
       // Cleanup function
@@ -83,10 +125,16 @@ const ViewPrescriptions = () => {
 
     const fetchPrescriptions = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/patient/prescriptions', {
+        const res = await axios.get(createApiUrl('patient/prescriptions'), {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         })
+        console.log('🔍 Fetched prescription data:', res.data) // Debug log
         setPrescriptions(res.data)
+        
+        // Group prescriptions by doctor
+        const grouped = groupPrescriptionsByDoctor(res.data)
+        setGroupedPrescriptions(grouped)
+        console.log('👥 Grouped prescriptions by doctor:', grouped)
       } catch (error) {
         console.error('Error fetching prescriptions:', error)
         alert('❌ Failed to fetch prescriptions')
@@ -199,116 +247,452 @@ const ViewPrescriptions = () => {
             </div>
           ) : (
             <>
-              <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
-                💊 Medical Prescriptions ({prescriptions.length})
-              </h2>
-              
-              <div className="grid grid-cols-1 gap-6">
-                {prescriptions.map((pres: any, index: number) => (
-                  <div 
-                    key={pres.id} 
-                    className="bg-gradient-to-r from-white/10 to-white/5 backdrop-blur-sm p-6 rounded-2xl border border-white/20 transition-all duration-300 hover:scale-105 hover:shadow-xl animate-fade-in-up content-protection"
-                    style={{
-                      animationDelay: `${index * 100}ms`,
-                      userSelect: 'none',
-                      WebkitUserSelect: 'none',
-                      MozUserSelect: 'none'
-                    }}
-                  >
-                    {/* Header */}
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center">
-                        <span className="text-3xl mr-4">👨‍⚕️</span>
-                        <div>
-                          <h3 className="text-white font-semibold text-lg">
-                            Dr. {pres.Enrollment?.Doctor?.name || 'Unknown Doctor'}
-                          </h3>
-                          <p className="text-green-300 text-sm">
-                            📧 {pres.Enrollment?.Doctor?.email || 'No email'}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="bg-green-500/20 text-green-300 px-3 py-1 rounded-full text-sm font-medium mb-1">
-                          ✅ Active
-                        </div>
-                        <p className="text-xs text-gray-400">
-                          📅 {new Date(pres.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-white flex items-center">
+                  💊 Medical Prescriptions ({prescriptions.length})
+                </h2>
+                <div className="bg-emerald-500/20 border border-emerald-400/30 rounded-xl px-4 py-2">
+                  <p className="text-emerald-300 text-sm font-medium">
+                    📊 Total: {prescriptions.length} prescription{prescriptions.length !== 1 ? 's' : ''} from {Object.keys(groupedPrescriptions).length} doctor{Object.keys(groupedPrescriptions).length !== 1 ? 's' : ''}
+                  </p>
+                </div>
+              </div>
 
-                    {/* Prescription Content - Secured */}
+              {/* Safety Information */}
+              <div className="bg-yellow-500/10 border border-yellow-400/30 rounded-2xl p-4 mb-6">
+                <div className="flex items-center mb-2">
+                  <span className="text-2xl mr-3">⚠️</span>
+                  <h3 className="text-yellow-300 font-bold">Important Safety Information</h3>
+                </div>
+                <ul className="text-yellow-200 text-sm space-y-1">
+                  <li>• Take medications exactly as prescribed by your doctor</li>
+                  <li>• Do not share medications with others</li>
+                  <li>• Contact your doctor if you experience any side effects</li>
+                  <li>• Store medications in a cool, dry place away from children</li>
+                </ul>
+              </div>
+              
+              <div className="space-y-8">
+                {Object.entries(groupedPrescriptions).map(([doctorKey, doctorPrescriptions], groupIndex) => {
+                  const doctorName = doctorPrescriptions[0]?.Enrollment?.Doctor?.name || 'Unknown Doctor'
+                  const doctorEmail = doctorPrescriptions[0]?.Enrollment?.Doctor?.email || 'No email available'
+                  
+                  return (
                     <div 
-                      className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-400/20 rounded-xl p-4 mb-4 relative"
+                      key={doctorKey}
+                      className="bg-gradient-to-r from-white/15 to-white/10 backdrop-blur-sm p-6 rounded-3xl border border-white/30 animate-fade-in-up"
                       style={{
-                        userSelect: 'none',
-                        WebkitUserSelect: 'none',
-                        MozUserSelect: 'none'
+                        animationDelay: `${groupIndex * 200}ms`,
                       }}
                     >
-                      <div className="flex items-center mb-3">
-                        <span className="text-2xl mr-3">📝</span>
-                        <h4 className="text-green-300 font-semibold">Prescription Details</h4>
-                        <div className="ml-auto text-red-400 text-xs opacity-50">🔒 PROTECTED</div>
+                      {/* Doctor Header */}
+                      <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/20">
+                        <div className="flex items-center">
+                          <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mr-4">
+                            <span className="text-white text-xl">👨‍⚕️</span>
+                          </div>
+                          <div>
+                            <h3 className="text-white font-bold text-xl">Dr. {doctorName}</h3>
+                            <p className="text-gray-300 text-sm">{doctorEmail}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-4">
+                          <div className="bg-blue-500/20 border border-blue-400/30 rounded-xl px-4 py-2">
+                            <p className="text-blue-300 text-sm font-medium">
+                              {doctorPrescriptions.length} prescription{doctorPrescriptions.length !== 1 ? 's' : ''}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => handleViewAllDoctorMedications(doctorPrescriptions)}
+                            className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white px-4 py-2 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 flex items-center"
+                          >
+                            <span className="mr-2">🔍</span>
+                            View All Medications
+                          </button>
+                        </div>
                       </div>
-                      <div 
-                        className="bg-white/10 backdrop-blur-sm rounded-lg p-4 relative"
-                        style={{
-                          userSelect: 'none',
-                          WebkitUserSelect: 'none',
-                          MozUserSelect: 'none'
-                        }}
-                      >
-                        <p 
-                          className="text-gray-200 whitespace-pre-wrap leading-relaxed"
-                          style={{
-                            userSelect: 'none',
-                            WebkitUserSelect: 'none',
-                            MozUserSelect: 'none'
-                          }}
-                        >
-                          {pres.notes}
-                        </p>
-                        <div className="absolute top-1 right-1 text-red-500 text-xs opacity-30">🛡️</div>
-                      </div>
-                    </div>
 
-                    {/* Footer Actions */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center text-gray-300 text-sm">
-                        <span className="mr-2">🕐</span>
-                        <span>Issued: {new Date(pres.createdAt).toLocaleString()}</span>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Link
-                          to="/patient/chat"
-                          className="bg-blue-500 hover:bg-blue-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 transform hover:scale-105 flex items-center"
-                        >
-                          <span className="mr-2">💬</span>
-                          Ask Questions
-                        </Link>
-                        <button 
-                          className="bg-purple-500 hover:bg-purple-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 transform hover:scale-105 flex items-center"
-                          onClick={() => {
-                            const confirmed = confirm('⚠️ SECURITY NOTICE: Downloaded prescriptions contain sensitive medical information. Ensure secure storage and do not share unauthorized copies. Continue?')
-                            if (confirmed) {
-                              alert('🔒 Secure download initiated. Please handle with care.')
-                            }
-                          }}
-                        >
-                          <span className="mr-2">📄</span>
-                          Secure Download
-                        </button>
+                      {/* Prescriptions Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {doctorPrescriptions.map((pres: any, index: number) => (
+                          <div 
+                            key={pres.id} 
+                            className="bg-gradient-to-r from-white/10 to-white/5 backdrop-blur-sm p-4 rounded-2xl border border-white/20 transition-all duration-300 hover:scale-105 hover:shadow-xl content-protection"
+                            style={{
+                              userSelect: 'none',
+                              WebkitUserSelect: 'none',
+                              MozUserSelect: 'none'
+                            }}
+                          >
+                            {/* Condensed Header */}
+                            <div className="text-center mb-3">
+                              <div className="text-3xl mb-2">💊</div>
+                              <h4 className="text-white font-semibold text-base mb-1">
+                                {pres.drugName || 'Prescription'}
+                              </h4>
+                            </div>
+
+                            {/* Quick Info */}
+                            <div className="space-y-1 mb-3 text-xs">
+                              <div className="flex items-center justify-between">
+                                <span className="text-gray-400">📅 Date:</span>
+                                <span className="text-white">{new Date(pres.createdAt).toLocaleDateString()}</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-gray-400">🕐 Time:</span>
+                                <span className="text-white">{new Date(pres.createdAt).toLocaleTimeString()}</span>
+                              </div>
+                              {pres.dosage && (
+                                <div className="flex items-center justify-between">
+                                  <span className="text-gray-400">⚖️ Dosage:</span>
+                                  <span className="text-white">{pres.dosage}</span>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Status Badge */}
+                            <div className="text-center mb-3">
+                              <div className="bg-green-500/20 text-green-300 px-2 py-1 rounded-full text-xs font-medium inline-block">
+                                ✅ Active
+                              </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="space-y-2">
+                              <button
+                                onClick={() => handleViewDetails(pres)}
+                                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 transform hover:scale-105 flex items-center justify-center"
+                              >
+                                <span className="mr-1">👁️</span>
+                                View Details
+                              </button>
+                              <div className="flex space-x-1">
+                                <Link
+                                  to="/patient/chat"
+                                  className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-white px-2 py-1 rounded text-xs font-medium transition-all duration-300 transform hover:scale-105 flex items-center justify-center"
+                                >
+                                  <span className="mr-1">💬</span>
+                                  Chat
+                                </Link>
+                                <button 
+                                  className="flex-1 bg-teal-500 hover:bg-teal-400 text-white px-2 py-1 rounded text-xs font-medium transition-all duration-300 transform hover:scale-105 flex items-center justify-center"
+                                  onClick={() => {
+                                    const confirmed = confirm('⚠️ SECURITY NOTICE: Downloaded prescriptions contain sensitive medical information. Continue?')
+                                    if (confirmed) {
+                                      alert('🔒 Secure download initiated.')
+                                    }
+                                  }}
+                                >
+                                  <span className="mr-1">📄</span>
+                                  Download
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </>
           )}
         </div>
       </div>
+
+      {/* Prescription Details Modal */}
+      {showDetails && selectedPrescription && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gradient-to-br from-green-900 via-emerald-900 to-teal-900 rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-white/20">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-white/20">
+              <h2 className="text-2xl font-bold text-white flex items-center">
+                <span className="mr-3">💊</span>
+                Prescription Details
+              </h2>
+              <button
+                onClick={closeDetails}
+                className="text-white hover:text-red-300 transition-colors duration-300 text-2xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 space-y-6">
+              {/* Doctor Information */}
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+                <h3 className="text-lg font-semibold text-white mb-2 flex items-center">
+                  <span className="mr-2">👨‍⚕️</span>
+                  Doctor Information
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-gray-400">Doctor Name:</p>
+                    <p className="text-white font-medium">Dr. {selectedPrescription.Enrollment?.Doctor?.name || 'Unknown Doctor'}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-400">Email:</p>
+                    <p className="text-white font-medium">{selectedPrescription.Enrollment?.Doctor?.email || 'No email available'}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-400">Issue Date:</p>
+                    <p className="text-white font-medium">{new Date(selectedPrescription.createdAt).toLocaleDateString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-400">Issue Time:</p>
+                    <p className="text-white font-medium">{new Date(selectedPrescription.createdAt).toLocaleTimeString()}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Prescription Details */}
+              {selectedPrescription.drugName ? (
+                /* Detailed prescription format */
+                <div className="space-y-4">
+                  {/* Drug Information */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-blue-500/10 p-4 rounded-xl border border-blue-400/20">
+                      <p className="text-blue-300 text-sm font-medium mb-2">💊 Medication</p>
+                      <p className="text-white font-semibold text-lg">{selectedPrescription.drugName}</p>
+                    </div>
+                    <div className="bg-purple-500/10 p-4 rounded-xl border border-purple-400/20">
+                      <p className="text-purple-300 text-sm font-medium mb-2">⚖️ Dosage</p>
+                      <p className="text-white font-semibold text-lg">{selectedPrescription.dosage}</p>
+                    </div>
+                  </div>
+
+                  {/* Timing Information */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-orange-500/10 p-4 rounded-xl border border-orange-400/20">
+                      <p className="text-orange-300 text-sm font-medium mb-2">⏰ Frequency</p>
+                      <p className="text-white font-semibold text-lg">{selectedPrescription.frequency}</p>
+                    </div>
+                    <div className="bg-teal-500/10 p-4 rounded-xl border border-teal-400/20">
+                      <p className="text-teal-300 text-sm font-medium mb-2">📅 Duration</p>
+                      <p className="text-white font-semibold text-lg">{selectedPrescription.duration}</p>
+                    </div>
+                  </div>
+
+                  {/* Instructions */}
+                  <div className="bg-green-500/10 p-4 rounded-xl border border-green-400/20">
+                    <p className="text-green-300 text-sm font-medium mb-3">📋 Instructions for Use</p>
+                    <p className="text-gray-200 leading-relaxed">{selectedPrescription.instructions}</p>
+                  </div>
+
+                  {/* Additional Notes */}
+                  {selectedPrescription.notes && (
+                    <div className="bg-yellow-500/10 p-4 rounded-xl border border-yellow-400/20">
+                      <p className="text-yellow-300 text-sm font-medium mb-3">📝 Additional Notes</p>
+                      <p className="text-gray-200 leading-relaxed">{selectedPrescription.notes}</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* Legacy format */
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                  <p className="text-gray-200 leading-relaxed">
+                    {selectedPrescription.notes || 'No prescription details available'}
+                  </p>
+                </div>
+              )}
+
+              {/* Modal Actions */}
+              <div className="flex justify-end space-x-4 pt-4 border-t border-white/20">
+                <button
+                  onClick={closeDetails}
+                  className="px-6 py-3 border border-gray-300 rounded-xl text-gray-300 hover:bg-white/10 transition-all duration-300"
+                >
+                  Close
+                </button>
+                <button 
+                  className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-105"
+                  onClick={() => {
+                    const confirmed = confirm('⚠️ SECURITY NOTICE: Downloaded prescriptions contain sensitive medical information. Continue?')
+                    if (confirmed) {
+                      alert('🔒 Secure download initiated.')
+                    }
+                  }}
+                >
+                  <span className="mr-2">📄</span>
+                  Download Prescription
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Doctor All Medications Modal */}
+      {showDoctorView && selectedDoctorInfo && selectedDoctorPrescriptions.length > 0 && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gradient-to-br from-green-900 via-emerald-900 to-teal-900 rounded-3xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto border border-white/20">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-white/20">
+              <div className="flex items-center">
+                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mr-4">
+                  <span className="text-white text-xl">👨‍⚕️</span>
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white">Dr. {selectedDoctorInfo.name}</h2>
+                  <p className="text-gray-300">{selectedDoctorInfo.email}</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="bg-blue-500/20 border border-blue-400/30 rounded-xl px-4 py-2">
+                  <p className="text-blue-300 text-sm font-medium">
+                    {selectedDoctorPrescriptions.length} Total Medications
+                  </p>
+                </div>
+                <button
+                  onClick={closeDoctorView}
+                  className="text-white hover:text-red-300 transition-colors duration-300 text-2xl"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Content - All Medications */}
+            <div className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {selectedDoctorPrescriptions.map((prescription: any, index: number) => (
+                  <div key={prescription.id} className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+                    {/* Medication Header */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center">
+                        <span className="text-3xl mr-3">💊</span>
+                        <div>
+                          <h3 className="text-white font-bold text-lg">
+                            {prescription.drugName || `Medication ${index + 1}`}
+                          </h3>
+                          <p className="text-gray-400 text-sm">
+                            Issued: {new Date(prescription.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="bg-green-500/20 text-green-300 px-3 py-1 rounded-full text-sm font-medium">
+                        ✅ Active
+                      </div>
+                    </div>
+
+                    {/* Medication Details */}
+                    {prescription.drugName ? (
+                      <div className="space-y-4">
+                        {/* Drug Information */}
+                        <div className="grid grid-cols-1 gap-3">
+                          <div className="bg-blue-500/10 p-3 rounded-xl border border-blue-400/20">
+                            <p className="text-blue-300 text-sm font-medium mb-1">💊 Medication</p>
+                            <p className="text-white font-semibold">{prescription.drugName}</p>
+                          </div>
+                          {prescription.dosage && (
+                            <div className="bg-purple-500/10 p-3 rounded-xl border border-purple-400/20">
+                              <p className="text-purple-300 text-sm font-medium mb-1">⚖️ Dosage</p>
+                              <p className="text-white font-semibold">{prescription.dosage}</p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Timing Information */}
+                        <div className="grid grid-cols-1 gap-3">
+                          {prescription.frequency && (
+                            <div className="bg-orange-500/10 p-3 rounded-xl border border-orange-400/20">
+                              <p className="text-orange-300 text-sm font-medium mb-1">⏰ Frequency</p>
+                              <p className="text-white font-semibold">{prescription.frequency}</p>
+                            </div>
+                          )}
+                          {prescription.duration && (
+                            <div className="bg-teal-500/10 p-3 rounded-xl border border-teal-400/20">
+                              <p className="text-teal-300 text-sm font-medium mb-1">📅 Duration</p>
+                              <p className="text-white font-semibold">{prescription.duration}</p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Instructions */}
+                        {prescription.instructions && (
+                          <div className="bg-green-500/10 p-3 rounded-xl border border-green-400/20">
+                            <p className="text-green-300 text-sm font-medium mb-2">📋 Instructions</p>
+                            <p className="text-gray-200 text-sm leading-relaxed">{prescription.instructions}</p>
+                          </div>
+                        )}
+
+                        {/* Additional Notes */}
+                        {prescription.notes && (
+                          <div className="bg-yellow-500/10 p-3 rounded-xl border border-yellow-400/20">
+                            <p className="text-yellow-300 text-sm font-medium mb-2">📝 Notes</p>
+                            <p className="text-gray-200 text-sm leading-relaxed">{prescription.notes}</p>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      /* Legacy format */
+                      <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20">
+                        <p className="text-gray-200 text-sm leading-relaxed">
+                          {prescription.notes || 'No prescription details available'}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Individual Actions */}
+                    <div className="flex space-x-2 mt-4">
+                      <button
+                        onClick={() => handleViewDetails(prescription)}
+                        className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 transform hover:scale-105 flex items-center justify-center"
+                      >
+                        <span className="mr-1">👁️</span>
+                        Full Details
+                      </button>
+                      <button 
+                        className="flex-1 bg-teal-500 hover:bg-teal-400 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 transform hover:scale-105 flex items-center justify-center"
+                        onClick={() => {
+                          const confirmed = confirm('⚠️ SECURITY NOTICE: Downloaded prescriptions contain sensitive medical information. Continue?')
+                          if (confirmed) {
+                            alert('🔒 Secure download initiated.')
+                          }
+                        }}
+                      >
+                        <span className="mr-1">📄</span>
+                        Download
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Modal Actions */}
+              <div className="flex justify-between items-center pt-4 border-t border-white/20">
+                <div className="flex items-center text-gray-300">
+                  <span className="mr-2">📊</span>
+                  <span className="text-sm">
+                    Total medications from Dr. {selectedDoctorInfo.name}: {selectedDoctorPrescriptions.length}
+                  </span>
+                </div>
+                <div className="flex space-x-4">
+                  <button
+                    onClick={closeDoctorView}
+                    className="px-6 py-3 border border-gray-300 rounded-xl text-gray-300 hover:bg-white/10 transition-all duration-300"
+                  >
+                    Close
+                  </button>
+                  <button 
+                    className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-105"
+                    onClick={() => {
+                      const confirmed = confirm('⚠️ SECURITY NOTICE: This will download all prescriptions from this doctor. Continue?')
+                      if (confirmed) {
+                        alert('🔒 Secure download of all medications initiated.')
+                      }
+                    }}
+                  >
+                    <span className="mr-2">📄</span>
+                    Download All Medications
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

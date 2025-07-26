@@ -1,0 +1,277 @@
+/* DESIGN 4: Creative & Artistic */
+/* Vibrant, expressive with artistic flair */
+
+@import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;500;600;700&family=Dancing+Script:wght@400;500;600;700&display=swap');
+
+/* Artistic Color Explosions */
+.creative-patient-bg { 
+  background: conic-gradient(from 0deg at 50% 50%, 
+    #ff6b6b 0deg, 
+    #4ecdc4 60deg, 
+    #45b7d1 120deg, 
+    #96ceb4 180deg, 
+    #ffeaa7 240deg, 
+    #fd79a8 300deg, 
+    #ff6b6b 360deg);
+  animation: colorSpin 10s linear infinite;
+}
+
+.creative-doctor-bg { 
+  background: conic-gradient(from 0deg at 50% 50%, 
+    #00b894 0deg, 
+    #00cec9 60deg, 
+    #55a3ff 120deg, 
+    #74b9ff 180deg, 
+    #a29bfe 240deg, 
+    #6c5ce7 300deg, 
+    #00b894 360deg);
+  animation: colorSpin 12s linear infinite;
+}
+
+.creative-admin-bg { 
+  background: conic-gradient(from 0deg at 50% 50%, 
+    #e17055 0deg, 
+    #fdcb6e 60deg, 
+    #e84393 120deg, 
+    #a29bfe 180deg, 
+    #74b9ff 240deg, 
+    #00cec9 300deg, 
+    #e17055 360deg);
+  animation: colorSpin 8s linear infinite;
+}
+
+@keyframes colorSpin {
+  0% { filter: hue-rotate(0deg) saturate(1); }
+  25% { filter: hue-rotate(90deg) saturate(1.2); }
+  50% { filter: hue-rotate(180deg) saturate(1.4); }
+  75% { filter: hue-rotate(270deg) saturate(1.2); }
+  100% { filter: hue-rotate(360deg) saturate(1); }
+}
+
+/* Artistic Brush Strokes */
+@keyframes paintBrush {
+  0% { 
+    clip-path: polygon(0% 0%, 0% 0%, 0% 100%, 0% 100%);
+  }
+  100% { 
+    clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+  }
+}
+
+/* Creative Cards - Higher specificity to override Tailwind */
+.creative-card,
+form.creative-card,
+div.creative-card {
+  background: linear-gradient(135deg, 
+    rgba(255,107,107,0.15) 0%, 
+    rgba(78,205,196,0.15) 25%,
+    rgba(69,183,209,0.15) 50%, 
+    rgba(150,206,180,0.15) 75%, 
+    rgba(255,234,167,0.15) 100%) !important;
+  backdrop-filter: blur(20px) !important;
+  border: 3px solid;
+  border-image: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4) 1;
+  border-radius: 20px !important;
+  box-shadow: 
+    0 15px 35px rgba(0,0,0,0.1),
+    0 5px 15px rgba(0,0,0,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.3) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.creative-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, 
+    transparent 30%, 
+    rgba(255,107,107,0.1) 40%,
+    rgba(78,205,196,0.1) 50%, 
+    rgba(69,183,209,0.1) 60%,
+    transparent 70%);
+  transform: rotate(45deg);
+  animation: shine 3s ease-in-out infinite;
+}
+
+@keyframes shine {
+  0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+  50% { transform: translateX(0%) translateY(0%) rotate(45deg); }
+  100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+}
+
+/* Artistic Buttons */
+.creative-button {
+  background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1);
+  background-size: 300% 300%;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 16px 32px;
+  font-weight: 700;
+  font-family: 'Comfortaa', cursive;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  position: relative;
+  overflow: hidden;
+  animation: gradientDance 4s ease infinite;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 20px rgba(255, 107, 107, 0.3);
+}
+
+@keyframes gradientDance {
+  0% { background-position: 0% 50%; }
+  25% { background-position: 100% 0%; }
+  50% { background-position: 100% 100%; }
+  75% { background-position: 0% 100%; }
+  100% { background-position: 0% 50%; }
+}
+
+.creative-button:hover {
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 15px 30px rgba(255, 107, 107, 0.4);
+}
+
+.creative-button::after {
+  content: '✨';
+  position: absolute;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
+  font-size: 16px;
+  animation: sparkle 1.5s ease infinite;
+}
+
+@keyframes sparkle {
+  0%, 100% { opacity: 1; transform: translateY(-50%) scale(1); }
+  50% { opacity: 0.5; transform: translateY(-50%) scale(1.2); }
+}
+
+/* Creative Input Fields - Higher specificity to override Tailwind */
+.creative-input,
+input.creative-input,
+textarea.creative-input,
+select.creative-input {
+  background: linear-gradient(135deg, 
+    rgba(255,107,107,0.1), 
+    rgba(78,205,196,0.1),
+    rgba(69,183,209,0.1)) !important;
+  border: 3px solid transparent !important;
+  background-clip: padding-box;
+  border-radius: 15px !important;
+  padding: 16px 20px !important;
+  color: #1a202c !important;
+  font-family: 'Comfortaa', cursive !important;
+  font-weight: 500 !important;
+  transition: all 0.3s ease;
+  position: relative;
+  box-shadow: 
+    0 4px 12px rgba(0,0,0,0.05),
+    inset 0 1px 0 rgba(255,255,255,0.2) !important;
+}
+
+.creative-input:focus,
+input.creative-input:focus,
+textarea.creative-input:focus,
+select.creative-input:focus {
+  background: linear-gradient(135deg, 
+    rgba(255,107,107,0.2), 
+    rgba(78,205,196,0.2),
+    rgba(69,183,209,0.2)) !important;
+  border-color: #ff6b6b !important;
+  box-shadow: 
+    0 0 0 4px rgba(255, 107, 107, 0.2),
+    0 8px 16px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255,255,255,0.3) !important;
+  transform: translateY(-2px);
+  outline: none !important;
+}
+
+/* Playful Typography */
+.creative-title {
+  font-family: 'Dancing Script', cursive;
+  font-weight: 700;
+  background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #ffeaa7, #fd79a8);
+  background-size: 600% 600%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: colorFlow 3s ease-in-out infinite;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
+
+@keyframes colorFlow {
+  0%, 100% { background-position: 0% 50%; }
+  33% { background-position: 50% 100%; }
+  66% { background-position: 100% 50%; }
+}
+
+/* Additional Creative Animations */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in-down {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Animation Classes */
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out;
+}
+
+.animate-fade-in-down {
+  animation: fade-in-down 0.6s ease-out;
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.8s ease-out;
+}
+
+.animation-delay-1000 {
+  animation-delay: 1s;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-3000 {
+  animation-delay: 3s;
+}
+
+.animation-delay-800 {
+  animation-delay: 0.8s;
+}
+
+.animation-delay-900 {
+  animation-delay: 0.9s;
+}

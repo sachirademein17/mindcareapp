@@ -7,7 +7,7 @@ import { Prescription } from './Prescription'
 import { ChatMessagePG } from './ChatMessagePG'
 
 // Define relationships
-User.hasOne(DoctorDetails, { foreignKey: 'userId' })
+User.hasOne(DoctorDetails, { foreignKey: 'userId', as: 'DoctorDetail' })
 DoctorDetails.belongsTo(User, { foreignKey: 'userId' })
 
 User.hasMany(Enrollment, { foreignKey: 'patientId', as: 'PatientEnrollments' })

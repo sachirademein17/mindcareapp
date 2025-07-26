@@ -16,7 +16,7 @@ export const getEnrolledPatients = async (req: Request, res: Response) => {
     const enrollments = await Enrollment.findAll({
       where: { doctorId, status: 'approved' },
       include: [
-        { model: User, as: 'Patient', attributes: ['id', 'name', 'email'] }
+        { model: User, as: 'Patient', attributes: ['id', 'name', 'email', 'nic'] }
       ]
     })
     res.json(enrollments)
@@ -26,98 +26,82 @@ export const getEnrolledPatients = async (req: Request, res: Response) => {
   }
 }
 
-export const issuePrescription = async (req: Request, res: Response) => {
+export const issueMultiplePrescriptions = async (req: Request, res: Response) => {
   try {
+    console.log('🔔 issueMultiplePrescriptions called with body:', req.body) // Debug log
+    
     if (!req.user) {
+      console.log('❌ User not authenticated')
       return res.status(401).json({ error: 'User not authenticated' })
     }
     
-    const { enrollmentId, notes } = req.body
+    console.log('✅ User authenticated:', req.user.id) // Debug log
+    const { prescriptions } = req.body
 
-    const prescription = await Prescription.create({ enrollmentId, notes })
-    res.status(201).json(prescription)
-  } catch (error) {
-    console.error('Error issuing prescription:', error)
-    res.status(500).json({ error: 'Failed to issue prescription' })
-  }
-}
-
-export const getPendingEnrollments = async (req: Request, res: Response) => {
-  try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'User not authenticated' })
+    if (!prescriptions || !Array.isArray(prescriptions) || prescriptions.length === 0) {
+      console.log('❌ Invalid prescriptions array:', prescriptions)
+      return res.status(400).json({ error: 'Prescriptions array is required' })
     }
+
+    console.log('✅ Prescriptions array valid, length:', prescriptions.length) // Debug log
+
+    // Validate that all prescriptions have required fields
+    for (const prescription of prescriptions) {
+      if (!prescription.patientId || !prescription.patientNIC || !prescription.drugName || 
+          !prescription.dosage || !prescription.frequency || !prescription.duration || 
+          !prescription.instructions) {
+        console.log('❌ Missing required fields in prescription:', prescription)
+        return res.status(400).json({ error: 'All prescription fields are required' })
+      }
+    }
+
+    console.log('✅ All prescriptions have required fields') // Debug log
+
+    // Find enrollment ID for the patient
+    const patientId = prescriptions[0].patientId
+    console.log('🔍 Looking for enrollment for patient:', patientId, 'doctor:', req.user.id) // Debug log
     
-    const doctorId = req.user.id
-
-    const pendingEnrollments = await Enrollment.findAll({
-      where: { doctorId, status: 'pending' },
-      include: [
-        { model: User, as: 'Patient', attributes: ['id', 'name', 'email'] }
-      ],
-      order: [['createdAt', 'DESC']]
-    })
-    res.json(pendingEnrollments)
-  } catch (error) {
-    console.error('Error fetching pending enrollments:', error)
-    res.status(500).json({ error: 'Failed to fetch pending enrollments' })
-  }
-}
-
-export const approveEnrollment = async (req: Request, res: Response) => {
-  try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'User not authenticated' })
-    }
-    
-    const doctorId = req.user.id
-    const enrollmentId = parseInt(req.params.enrollmentId)
-
-    if (isNaN(enrollmentId)) {
-      return res.status(400).json({ error: 'Invalid enrollment ID' })
-    }
-
     const enrollment = await Enrollment.findOne({
-      where: { id: enrollmentId, doctorId, status: 'pending' }
+      where: { 
+        patientId: patientId,
+        doctorId: req.user.id,
+        status: 'approved'
+      }
     })
 
     if (!enrollment) {
-      return res.status(404).json({ error: 'Pending enrollment not found' })
+      console.log('❌ Patient enrollment not found or not approved')
+      return res.status(404).json({ error: 'Patient enrollment not found or not approved' })
     }
 
-    await enrollment.update({ status: 'approved' })
-    res.json({ message: 'Enrollment approved successfully', enrollment })
-  } catch (error) {
-    console.error('Error approving enrollment:', error)
-    res.status(500).json({ error: 'Failed to approve enrollment' })
-  }
-}
+    console.log('✅ Enrollment found:', enrollment.id) // Debug log
 
-export const rejectEnrollment = async (req: Request, res: Response) => {
-  try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'User not authenticated' })
-    }
-    
-    const doctorId = req.user.id
-    const enrollmentId = parseInt(req.params.enrollmentId)
+    // Create all prescriptions
+    console.log('📝 Creating prescriptions...') // Debug log
+    const createdPrescriptions = await Promise.all(
+      prescriptions.map(prescription => 
+        Prescription.create({
+          enrollmentId: enrollment.id,
+          patientId: prescription.patientId,
+          patientNIC: prescription.patientNIC,
+          drugName: prescription.drugName,
+          dosage: prescription.dosage,
+          frequency: prescription.frequency,
+          duration: prescription.duration,
+          instructions: prescription.instructions,
+          notes: prescription.notes || ''
+        })
+      )
+    )
 
-    if (isNaN(enrollmentId)) {
-      return res.status(400).json({ error: 'Invalid enrollment ID' })
-    }
+    console.log('✅ Prescriptions created successfully:', createdPrescriptions.length) // Debug log
 
-    const enrollment = await Enrollment.findOne({
-      where: { id: enrollmentId, doctorId, status: 'pending' }
+    res.status(201).json({ 
+      message: `${createdPrescriptions.length} prescription(s) issued successfully`,
+      prescriptions: createdPrescriptions 
     })
-
-    if (!enrollment) {
-      return res.status(404).json({ error: 'Pending enrollment not found' })
-    }
-
-    await enrollment.update({ status: 'rejected' })
-    res.json({ message: 'Enrollment rejected successfully', enrollment })
   } catch (error) {
-    console.error('Error rejecting enrollment:', error)
-    res.status(500).json({ error: 'Failed to reject enrollment' })
+    console.error('❌ Error issuing multiple prescriptions:', error)
+    res.status(500).json({ error: 'Failed to issue prescriptions' })
   }
 }

@@ -22,9 +22,25 @@ exports.DoctorDetails = postgres_config_1.sequelize.define('DoctorDetails', {
         type: sequelize_1.DataTypes.STRING,
         allowNull: false
     },
+    licenseNumber: {
+        type: sequelize_1.DataTypes.STRING,
+        allowNull: true
+    },
+    experience: {
+        type: sequelize_1.DataTypes.INTEGER,
+        allowNull: true
+    },
+    district: {
+        type: sequelize_1.DataTypes.STRING,
+        allowNull: true
+    },
+    qualifications: {
+        type: sequelize_1.DataTypes.TEXT,
+        allowNull: true
+    },
     gender: {
         type: sequelize_1.DataTypes.STRING,
-        allowNull: false
+        allowNull: true
     },
     location: {
         type: sequelize_1.DataTypes.STRING,
@@ -32,7 +48,7 @@ exports.DoctorDetails = postgres_config_1.sequelize.define('DoctorDetails', {
     },
     languages: {
         type: sequelize_1.DataTypes.TEXT, // Changed to TEXT to store JSON string
-        allowNull: false
+        allowNull: true
     },
     approved: {
         type: sequelize_1.DataTypes.BOOLEAN,
@@ -40,6 +56,14 @@ exports.DoctorDetails = postgres_config_1.sequelize.define('DoctorDetails', {
     },
     cvPath: {
         type: sequelize_1.DataTypes.STRING,
+        allowNull: true
+    },
+    licensePath: {
+        type: sequelize_1.DataTypes.STRING,
+        allowNull: true
+    },
+    bio: {
+        type: sequelize_1.DataTypes.TEXT,
         allowNull: true
     }
 });

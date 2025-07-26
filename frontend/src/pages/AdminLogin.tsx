@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
+import { createApiUrl } from '../config/api'
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('')
@@ -10,13 +11,14 @@ const AdminLogin = () => {
   const handleLogin = async (e: any) => {
     e.preventDefault()
     try {
-      const res = await axios.post('http://localhost:5000/auth/admin/login', { email, password })
+      const res = await axios.post(createApiUrl('api/auth/admin/login'), { email, password })
       localStorage.setItem('token', res.data.token)
       localStorage.setItem('userId', res.data.user.id.toString())
       localStorage.setItem('role', 'admin')
       navigate('/admin/dashboard')
     } catch (err) {
-      alert('Login failed')
+      console.error('Admin login failed:', err)
+      alert('Login failed. Please check your credentials.')
     }
   }
 

@@ -1,0 +1,254 @@
+/* DESIGN 5: Cosmic & Futuristic */
+/* Space-age aesthetics with sci-fi elements */
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+
+/* Cosmic Backgrounds */
+.cosmic-patient-bg { 
+  background: radial-gradient(ellipse at center, #0f0f23 0%, #16213e 25%, #0f3460 50%, #533a7b 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.cosmic-doctor-bg { 
+  background: radial-gradient(ellipse at center, #0a0e0a 0%, #1a2e1a 25%, #2d4a2d 50%, #1e3a8a 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.cosmic-admin-bg { 
+  background: radial-gradient(ellipse at center, #1a0b2e 0%, #2d1b4e 25%, #4c1d95 50%, #7c2d12 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Animated Stars */
+.cosmic-stars::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(2px 2px at 20% 30%, white, transparent),
+    radial-gradient(2px 2px at 40% 70%, white, transparent),
+    radial-gradient(1px 1px at 90% 40%, white, transparent),
+    radial-gradient(1px 1px at 50% 50%, white, transparent),
+    radial-gradient(2px 2px at 80% 10%, white, transparent);
+  background-repeat: repeat;
+  background-size: 550px 550px, 350px 350px, 250px 250px, 150px 150px, 750px 750px;
+  animation: twinkle 10s linear infinite;
+}
+
+@keyframes twinkle {
+  0% { transform: translateY(0px); }
+  100% { transform: translateY(-550px); }
+}
+
+/* Holographic Cards */
+.cosmic-card {
+  background: linear-gradient(135deg, 
+    rgba(255,255,255,0.03) 0%, 
+    rgba(255,255,255,0.01) 50%, 
+    rgba(255,255,255,0.03) 100%);
+  backdrop-filter: blur(25px);
+  border: 1px solid;
+  border-image: linear-gradient(45deg, 
+    rgba(0,255,255,0.5), 
+    rgba(255,0,255,0.5), 
+    rgba(255,255,0,0.5)) 1;
+  border-radius: 20px;
+  box-shadow: 
+    0 25px 50px rgba(0,0,0,0.5),
+    inset 0 1px 0 rgba(255,255,255,0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.cosmic-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(0,255,255,0.2), 
+    rgba(255,0,255,0.2), 
+    transparent);
+  animation: scanLine 3s linear infinite;
+}
+
+@keyframes scanLine {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+/* Futuristic Buttons */
+.cosmic-button {
+  background: linear-gradient(135deg, #00ffff, #ff00ff, #ffff00);
+  background-size: 300% 300%;
+  color: #000;
+  border: 2px solid rgba(0,255,255,0.5);
+  border-radius: 0;
+  padding: 14px 28px;
+  font-family: 'Orbitron', monospace;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  position: relative;
+  overflow: hidden;
+  animation: neonPulse 2s ease-in-out infinite alternate;
+  transition: all 0.3s ease;
+  clip-path: polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%);
+}
+
+@keyframes neonPulse {
+  from { 
+    box-shadow: 
+      0 0 10px rgba(0,255,255,0.5),
+      inset 0 0 10px rgba(0,255,255,0.2);
+  }
+  to { 
+    box-shadow: 
+      0 0 20px rgba(0,255,255,0.8),
+      0 0 30px rgba(0,255,255,0.6),
+      inset 0 0 20px rgba(0,255,255,0.4);
+  }
+}
+
+.cosmic-button:hover {
+  transform: translateY(-3px);
+  animation-duration: 0.5s;
+}
+
+.cosmic-button::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, 
+    transparent 30%, 
+    rgba(255,255,255,0.5) 50%, 
+    transparent 70%);
+  transform: translateX(-100%);
+  transition: transform 0.5s ease;
+}
+
+.cosmic-button:hover::after {
+  transform: translateX(100%);
+}
+
+/* Sci-fi Input Fields */
+.cosmic-input {
+  background: rgba(0,0,0,0.7);
+  border: 1px solid rgba(0,255,255,0.3);
+  border-radius: 0;
+  padding: 14px 18px;
+  color: #00ffff;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 500;
+  letter-spacing: 1px;
+  transition: all 0.3s ease;
+  clip-path: polygon(5% 0%, 100% 0%, 95% 100%, 0% 100%);
+}
+
+.cosmic-input:focus {
+  background: rgba(0,0,0,0.9);
+  border-color: #00ffff;
+  box-shadow: 
+    0 0 15px rgba(0,255,255,0.5),
+    inset 0 0 15px rgba(0,255,255,0.1);
+  color: #ffffff;
+}
+
+.cosmic-input::placeholder {
+  color: rgba(0,255,255,0.6);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Holographic Typography */
+.cosmic-title {
+  font-family: 'Orbitron', monospace;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  background: linear-gradient(45deg, 
+    #00ffff 0%, 
+    #ff00ff 25%, 
+    #ffff00 50%, 
+    #00ffff 75%, 
+    #ff00ff 100%);
+  background-size: 400% 400%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: holoShift 3s ease-in-out infinite;
+  text-shadow: 
+    0 0 10px rgba(0,255,255,0.5),
+    0 0 20px rgba(255,0,255,0.3),
+    0 0 30px rgba(255,255,0,0.2);
+}
+
+@keyframes holoShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Data Stream Effect */
+.cosmic-stream {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 98px,
+    rgba(0,255,255,0.03) 100px
+  );
+  animation: dataFlow 5s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes dataFlow {
+  0% { transform: translateX(0px); }
+  100% { transform: translateX(100px); }
+}
+
+/* Quantum Glow Effect */
+.quantum-glow {
+  position: relative;
+}
+
+.quantum-glow::after {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  right: -5px;
+  bottom: -5px;
+  background: linear-gradient(45deg, #00ffff, #ff00ff, #ffff00, #00ffff);
+  background-size: 400% 400%;
+  border-radius: inherit;
+  z-index: -1;
+  filter: blur(10px);
+  animation: quantumPulse 4s ease-in-out infinite;
+}
+
+@keyframes quantumPulse {
+  0%, 100% { 
+    opacity: 0.3; 
+    background-position: 0% 50%; 
+  }
+  50% { 
+    opacity: 0.8; 
+    background-position: 100% 50%; 
+  }
+}

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getPrescriptions = exports.cancelEnrollmentByDoctor = exports.getEnrollmentStatusByDoctor = exports.getEnrollmentStatus = exports.cancelEnrollment = exports.enrollDoctor = exports.filterDoctors = exports.getAllEnrollments = exports.getEnrolledDoctors = void 0;
+exports.logSecurityViolation = exports.getPrescriptions = exports.cancelEnrollmentByDoctor = exports.getEnrollmentStatusByDoctor = exports.getEnrollmentStatus = exports.cancelEnrollment = exports.enrollDoctor = exports.filterDoctors = exports.getAllEnrollments = exports.getEnrolledDoctors = void 0;
 const User_1 = require("../models/User");
 const Enrollment_1 = require("../models/Enrollment");
 const DoctorDetails_1 = require("../models/DoctorDetails");
@@ -67,6 +67,7 @@ const filterDoctors = async (req, res) => {
             where: { role: 'doctor' },
             include: [{
                     model: DoctorDetails_1.DoctorDetails,
+                    as: 'DoctorDetail',
                     required: true,
                     where: whereCondition
                 }],
@@ -96,7 +97,7 @@ const enrollDoctor = async (req, res) => {
         // Check if doctor exists and is approved
         const doctor = await User_1.User.findOne({
             where: { id: doctorId, role: 'doctor' },
-            include: [{ model: DoctorDetails_1.DoctorDetails, where: { approved: true } }]
+            include: [{ model: DoctorDetails_1.DoctorDetails, as: 'DoctorDetail', where: { approved: true } }]
         });
         if (!doctor) {
             console.log('Enrollment failed: Doctor not found or not approved', { doctorId });
@@ -104,16 +105,16 @@ const enrollDoctor = async (req, res) => {
         }
         const existing = await Enrollment_1.Enrollment.findOne({ where: { doctorId, patientId } });
         if (existing) {
-            console.log('Enrollment failed: Already enrolled or pending', { doctorId, patientId, existingStatus: existing.status });
-            return res.status(400).json({ error: 'Already enrolled or pending' });
+            console.log('Enrollment failed: Already enrolled', { doctorId, patientId, existingStatus: existing.status });
+            return res.status(400).json({ error: 'Already enrolled' });
         }
         const enrollment = await Enrollment_1.Enrollment.create({
             doctorId,
             patientId,
-            status: 'pending'
+            status: 'approved'
         });
         console.log('Enrollment successful:', enrollment.toJSON());
-        res.json({ message: 'Enrollment request sent', enrollment });
+        res.json({ message: 'Successfully enrolled with doctor', enrollment });
     }
     catch (error) {
         console.error('Error enrolling doctor:', error);
@@ -245,3 +246,30 @@ const getPrescriptions = async (req, res) => {
     }
 };
 exports.getPrescriptions = getPrescriptions;
+// 🔒 Security: Log prescription page security violations
+const logSecurityViolation = async (req, res) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ error: 'User not authenticated' });
+        }
+        const { violationType, timestamp, userAgent } = req.body;
+        const patientId = parseInt(req.user.id);
+        // Log security violation
+        console.warn('🔒 SECURITY VIOLATION DETECTED:', {
+            patientId,
+            patientEmail: req.user.email,
+            violationType,
+            timestamp: new Date(timestamp),
+            userAgent,
+            ip: req.ip || req.connection.remoteAddress
+        });
+        // In a production environment, you would save this to a security audit table
+        // await SecurityAudit.create({ patientId, violationType, timestamp, userAgent, ip })
+        res.json({ message: 'Security violation logged' });
+    }
+    catch (error) {
+        console.error('Error logging security violation:', error);
+        res.status(500).json({ error: 'Failed to log security violation' });
+    }
+};
+exports.logSecurityViolation = logSecurityViolation;

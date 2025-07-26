@@ -66,7 +66,17 @@ const IssuePrescription = () => {
       const response = await axios.get(createApiUrl('doctor/enrollments'), {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       })
-      console.log('Fetched enrollments data:', response.data) // Debug log
+      console.log('🔍 Fetched enrollments data:', response.data) // Debug log
+      
+      // Debug: Check each patient's data structure
+      response.data.forEach((enrollment: any, index: number) => {
+        console.log(`👤 Patient ${index + 1}:`, enrollment.Patient)
+        console.log(`📄 NIC field present:`, enrollment.Patient?.nic ? 'YES ✅' : 'NO ❌')
+        if (enrollment.Patient?.nic) {
+          console.log(`📄 NIC value: "${enrollment.Patient.nic}"`)
+        }
+      })
+      
       setEnrollments(response.data)
     } catch (error) {
       console.error('Error fetching patients:', error)
@@ -134,6 +144,8 @@ const IssuePrescription = () => {
 
     setLoading(true)
     try {
+      console.log('🔔 Submitting prescription with selectedPatient:', selectedPatient) // Debug log
+      
       // Create array of prescription data
       const prescriptionData = prescriptions.map(prescription => ({
         patientId: selectedPatient!.id,
@@ -146,13 +158,17 @@ const IssuePrescription = () => {
         notes: prescription.notes
       }))
 
+      console.log('📋 Prescription data to send:', prescriptionData) // Debug log
+      console.log('🔗 API URL:', createApiUrl('doctor/issue-multiple-prescriptions')) // Debug log
+
       // Send all prescriptions in one request
-      await axios.post(createApiUrl('doctor/issue-multiple-prescriptions'), {
+      const response = await axios.post(createApiUrl('doctor/issue-multiple-prescriptions'), {
         prescriptions: prescriptionData
       }, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       })
 
+      console.log('✅ Prescription response:', response.data) // Debug log
       alert(`Prescription(s) issued successfully! (${prescriptions.length})`)
       
       // Reset form
@@ -170,7 +186,9 @@ const IssuePrescription = () => {
       // Navigate back to dashboard
       navigate('/doctor/dashboard')
     } catch (error: any) {
-      console.error('Error issuing prescription:', error)
+      console.error('❌ Error issuing prescription:', error)
+      console.error('❌ Error response:', error.response?.data) // Debug log
+      console.error('❌ Error status:', error.response?.status) // Debug log
       alert(`Failed to issue prescription: ${error.response?.data?.error || error.message}`)
     } finally {
       setLoading(false)
@@ -235,7 +253,9 @@ const IssuePrescription = () => {
                       <div>
                         <p className="text-white font-semibold">{enrollment.Patient.name}</p>
                         <p className="text-gray-300 text-sm">{enrollment.Patient.email}</p>
-                        <p className="text-gray-400 text-xs">NIC: {enrollment.Patient.nic}</p>
+                        <p className="text-emerald-300 text-sm font-medium">
+                          NIC: {enrollment.Patient.nic || 'Not available ❌'}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -408,7 +428,14 @@ const IssuePrescription = () => {
                 <h3 className="text-emerald-300 font-semibold mb-2">Patient Information:</h3>
                 <p className="text-white">Name: {selectedPatient.name}</p>
                 <p className="text-white">Email: {selectedPatient.email}</p>
-                <p className="text-white">NIC: {selectedPatient.nic}</p>
+                <p className={`${selectedPatient.nic ? 'text-white' : 'text-red-400'}`}>
+                  NIC: {selectedPatient.nic || '❌ NOT AVAILABLE - Cannot issue prescription'}
+                </p>
+                {!selectedPatient.nic && (
+                  <p className="text-red-400 text-sm mt-2 font-medium">
+                    ⚠️ Warning: Patient NIC is required for prescription submission
+                  </p>
+                )}
               </div>
 
               {/* Submit Button */}

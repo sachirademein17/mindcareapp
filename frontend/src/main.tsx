@@ -10,10 +10,15 @@ import AdminDashboard from './pages/AdminDashboard'
 import LoginAdmin from './pages/AdminLogin'
 import DoctorDashboard from './pages/doctor/DoctorDashboard'
 import DoctorChat from './pages/doctor/DoctorChat'
+import IssuePrescription from './pages/doctor/IssuePrescription'
+import DoctorProfile from './pages/doctor/DoctorProfile'
 import PatientDashboard from './pages/patient/PatientDashboard'
 import PatientChat from './pages/patient/PatientChat'
 import FindDoctors from './pages/patient/FindDoctors'
 import ViewPrescriptions from './pages/patient/ViewPrescriptions'
+import PatientProfile from './pages/patient/PatientProfile'
+import ChangePassword from './components/ChangePassword'
+import DesignShowcase from './pages/DesignShowcase'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
@@ -28,10 +33,16 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
         <Route path="/doctor/chat" element={<DoctorChat />} />
+        <Route path="/doctor/issue-prescription" element={<IssuePrescription />} />
+        <Route path="/doctor/profile" element={<DoctorProfile />} />
+        <Route path="/doctor/change-password" element={<ChangePassword />} />
         <Route path="/patient/dashboard" element={<PatientDashboard />} />
         <Route path="/patient/chat" element={<PatientChat />} />
         <Route path="/patient/find-doctors" element={<FindDoctors />} />
         <Route path="/patient/prescriptions" element={<ViewPrescriptions />} />
+        <Route path="/patient/profile" element={<PatientProfile />} />
+        <Route path="/patient/change-password" element={<ChangePassword />} />
+        <Route path="/design-showcase" element={<DesignShowcase />} />
         {/* Later: Add more dashboard routes */}
       </Routes>
     </BrowserRouter>
