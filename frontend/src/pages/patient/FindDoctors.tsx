@@ -52,47 +52,27 @@ const FindDoctors = () => {
       const response = await axios.post(`http://localhost:5000/patient/enroll/${doctorId}`, {}, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       })
-      alert('🎉 Enrollment request sent successfully!')
+      alert('🎉 Successfully enrolled with the doctor!')
       console.log('Enrollment response:', response.data)
       
-      // Update enrollment status
-      setEnrollmentStatuses(prev => ({ ...prev, [doctorId]: 'pending' }))
+      // Update enrollment status to approved (automatic enrollment)
+      setEnrollmentStatuses(prev => ({ ...prev, [doctorId]: 'approved' }))
     } catch (error: any) {
       console.error('Error enrolling doctor:', error)
       if (error.response) {
         // Server responded with error status
         const errorMessage = error.response.data.error || error.response.data.message || 'Unknown server error'
-        if (errorMessage.includes('Already enrolled or pending')) {
-          alert('You already have an enrollment request with this doctor (pending approval) or are already enrolled.')
+        if (errorMessage.includes('Already enrolled')) {
+          alert('You are already enrolled with this doctor.')
         } else {
-          alert(`Failed to send enrollment request: ${errorMessage}`)
+          alert(`Failed to enroll: ${errorMessage}`)
         }
       } else if (error.request) {
         // Request was made but no response received
-        alert('Failed to send enrollment request: No response from server. Please check if the server is running.')
+        alert('Failed to enroll: No response from server. Please check if the server is running.')
       } else {
         // Something else happened
-        alert(`Failed to send enrollment request: ${error.message}`)
-      }
-    }
-  }
-
-  const handleCancelEnrollment = async (doctorId: string) => {
-    try {
-      const response = await axios.delete(`http://localhost:5000/patient/cancel-enrollment/${doctorId}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      })
-      alert('Enrollment request cancelled successfully!')
-      console.log('Cancellation response:', response.data)
-      
-      // Update enrollment status
-      setEnrollmentStatuses(prev => ({ ...prev, [doctorId]: 'none' }))
-    } catch (error: any) {
-      console.error('Error cancelling enrollment:', error)
-      if (error.response) {
-        alert(`Failed to cancel enrollment: ${error.response.data.error || error.response.data.message || 'Unknown server error'}`)
-      } else {
-        alert(`Failed to cancel enrollment: ${error.message}`)
+        alert(`Failed to enroll: ${error.message}`)
       }
     }
   }
@@ -271,22 +251,6 @@ const FindDoctors = () => {
                               <span className="mr-2">✅</span>
                               Enrolled
                             </span>
-                          )
-                        } else if (status === 'pending') {
-                          return (
-                            <div className="flex gap-2">
-                              <span className="bg-yellow-500 text-black px-4 py-2 rounded-xl text-sm font-medium flex items-center">
-                                <span className="mr-2">⏳</span>
-                                Pending
-                              </span>
-                              <button 
-                                onClick={() => handleCancelEnrollment(doc.id)} 
-                                className="bg-red-500 hover:bg-red-400 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 transform hover:scale-105 flex items-center"
-                              >
-                                <span className="mr-2">❌</span>
-                                Cancel
-                              </button>
-                            </div>
                           )
                         } else {
                           return (

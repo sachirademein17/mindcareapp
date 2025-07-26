@@ -13,7 +13,7 @@ export default function Login() {
   const handleLogin = async () => {
     setIsLoading(true)
     try {
-      const res = await axios.post(`http://localhost:5000/auth/${role}/login`, { email, password })
+      const res = await axios.post(`http://localhost:5000/api/auth/${role}/login`, { email, password })
       localStorage.setItem('token', res.data.token)
       localStorage.setItem('userId', res.data.user.id.toString())
       localStorage.setItem('role', role || '')
@@ -25,261 +25,131 @@ export default function Login() {
     }
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleLogin()
     }
   }
 
-  // Generate particles for background
-  const particles = Array.from({ length: 15 }, (_, i) => ({
-    id: i,
-    size: Math.random() * 3 + 1,
-    x: Math.random() * 100,
-    y: Math.random() * 100,
-    delay: Math.random() * 6
-  }))
-
-  // Role-specific theming
-  const getRoleTheme = () => {
-    switch (role) {
-      case 'doctor':
-        return {
-          bgClass: 'doctor-bg',
-          cardClass: 'glass-doctor',
-          accentClass: 'doctor-accent',
-          gradientText: 'gradient-doctor',
-          borderColor: 'border-emerald-300/30',
-          focusColor: 'focus:ring-emerald-400',
-          buttonGradient: 'from-emerald-600 to-green-600',
-          buttonHover: 'hover:from-emerald-500 hover:to-green-500',
-          textColor: 'text-emerald-100',
-          iconColor: 'text-emerald-200'
-        }
-      case 'patient':
-        return {
-          bgClass: 'patient-bg',
-          cardClass: 'glass-patient',
-          accentClass: 'patient-accent',
-          gradientText: 'gradient-patient',
-          borderColor: 'border-sky-300/30',
-          focusColor: 'focus:ring-sky-400',
-          buttonGradient: 'from-sky-600 to-blue-600',
-          buttonHover: 'hover:from-sky-500 hover:to-blue-500',
-          textColor: 'text-sky-100',
-          iconColor: 'text-sky-200'
-        }
-      case 'admin':
-        return {
-          bgClass: 'admin-bg',
-          cardClass: 'glass-admin',
-          accentClass: 'admin-accent',
-          gradientText: 'gradient-admin',
-          borderColor: 'border-purple-300/30',
-          focusColor: 'focus:ring-purple-400',
-          buttonGradient: 'from-purple-600 to-violet-600',
-          buttonHover: 'hover:from-purple-500 hover:to-violet-500',
-          textColor: 'text-purple-100',
-          iconColor: 'text-purple-200'
-        }
-      default:
-        return {
-          bgClass: 'bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900',
-          cardClass: 'glass-ultimate',
-          accentClass: 'bg-gradient-to-r from-purple-600 to-pink-600',
-          gradientText: 'text-holographic',
-          borderColor: 'border-purple-300/30',
-          focusColor: 'focus:ring-purple-400',
-          buttonGradient: 'from-purple-600 to-pink-600',
-          buttonHover: 'hover:from-purple-500 hover:to-pink-500',
-          textColor: 'text-purple-100',
-          iconColor: 'text-purple-200'
-        }
-    }
-  }
-
-  const theme = getRoleTheme()
-
-  // Helper functions for cleaner JSX
-  const getRoleTitle = () => {
-    if (role === 'doctor') return '🩺 Healthcare Provider'
-    if (role === 'patient') return '🧠 Wellness Seeker'
-    return '⚡ System Admin'
-  }
-
-  const getWelcomeMessage = () => {
-    if (role === 'doctor') return 'patients'
-    if (role === 'patient') return 'wellness journey'
-    return 'system'
-  }
-
-  const getButtonText = () => {
-    if (role === 'doctor') return 'Healing Portal'
-    if (role === 'patient') return 'Wellness Hub'
-    return 'Control Center'
-  }
-
-  const getFooterMessage = () => {
-    if (role === 'doctor') return 'Heal. Inspire. Transform Lives.'
-    if (role === 'patient') return 'Your Journey to Wellness Begins Now.'
-    return 'Manage. Monitor. Make a Difference.'
-  }
-
   return (
-    <div className={`min-h-screen ${theme.bgClass} relative overflow-hidden font-inter`}>
-      {/* Advanced Background Effects */}
-      <div className="absolute inset-0 animate-liquid opacity-20">
-        <div className={`absolute inset-0 ${theme.accentClass} opacity-10`}></div>
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 relative overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0">
+        <div className="absolute top-20 left-10 w-32 h-32 bg-cyan-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+        <div className="absolute top-40 right-20 w-40 h-40 bg-pink-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-2000"></div>
+        <div className="absolute bottom-20 left-20 w-36 h-36 bg-green-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-4000"></div>
+        <div className="absolute bottom-40 right-10 w-28 h-28 bg-yellow-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-6000"></div>
       </div>
 
-      {/* Floating Particles System */}
-      <div className="particles absolute inset-0">
-        {particles.map((particle) => (
-          <div
-            key={`login-particle-${particle.id}`}
-            className="particle absolute rounded-full"
-            style={{
-              width: `${particle.size}px`,
-              height: `${particle.size}px`,
-              left: `${particle.x}%`,
-              top: `${particle.y}%`,
-              animationDelay: `${particle.delay}s`
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Morphing Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-r from-purple-500 to-pink-500 animate-morphing opacity-15 filter blur-xl"></div>
-        <div className="absolute top-40 right-20 w-40 h-40 bg-gradient-to-r from-blue-500 to-cyan-500 animate-float3d opacity-15 filter blur-xl"></div>
-        <div className="absolute bottom-20 left-20 w-36 h-36 bg-gradient-to-r from-emerald-500 to-green-500 animate-breathe opacity-15 filter blur-xl"></div>
-        <div className="absolute bottom-40 right-10 w-28 h-28 bg-gradient-to-r from-violet-500 to-purple-500 animate-levitate opacity-15 filter blur-xl"></div>
+      {/* Floating Icons */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-16 left-1/4 text-white/10 text-4xl animate-float animation-delay-1000">🔐</div>
+        <div className="absolute top-32 right-1/3 text-white/10 text-3xl animate-float animation-delay-3000">💼</div>
+        <div className="absolute bottom-24 left-1/3 text-white/10 text-3xl animate-float animation-delay-5000">✨</div>
+        <div className="absolute bottom-40 right-1/4 text-white/10 text-4xl animate-float animation-delay-7000">🌟</div>
       </div>
 
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8">
-        <div className="max-w-lg w-full space-y-8">
-          {/* Spectacular Header Section */}
-          <div className="text-center mb-12">
-            <div className="mb-8">
-              <h1 className="text-6xl md:text-7xl font-extrabold font-playfair text-holographic hover-glow animate-breathe">
+        <div className="max-w-md w-full space-y-8 animate-fade-in-up">
+          {/* Header Section */}
+          <div className="text-center mb-8 animate-fade-in-down">
+            <div className="mb-6">
+              <h1 className="text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent animate-pulse">
                 MindCare
               </h1>
             </div>
-            <div className={`text-3xl md:text-4xl font-bold text-white mb-4 capitalize font-space ${theme.gradientText}`}>
-              {getRoleTitle()} Portal
+            <div className="text-2xl font-bold text-white mb-2 capitalize animate-fade-in">
+              {role === 'doctor' ? '👨‍⚕️' : '🧠'} {role} Login
             </div>
-            <p className={`text-xl ${theme.textColor} font-outfit`}>
-              Welcome back! Your {getWelcomeMessage()} awaits.
+            <p className="text-gray-300 animate-fade-in animation-delay-1000">
+              Welcome back! Ready to continue your journey?
             </p>
           </div>
           
-          {/* Enhanced Login Card */}
-          <div className={`${theme.cardClass} rounded-3xl shadow-2xl p-10 border ${theme.borderColor} glass-card-hover animate-levitate`}>
-            {/* Role-specific accent bar */}
-            <div className={`h-1 ${theme.accentClass} rounded-full mb-8 animate-breathe`}></div>
-            
+          {/* Login Card */}
+          <div className="bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl p-8 border border-white/20 animate-slide-in-left">
             {error && (
-              <div className="bg-red-500/20 border border-red-400/30 text-red-300 px-6 py-4 rounded-xl mb-8 backdrop-blur-sm glass-ultimate animate-float3d">
+              <div className="bg-red-500/20 border border-red-400/30 text-red-300 px-4 py-3 rounded-xl mb-6 backdrop-blur-sm animate-fade-in">
                 <div className="flex items-center">
-                  <span className="mr-3 text-xl" aria-hidden="true">⚠️</span>
-                  <span className="font-medium">{error}</span>
+                  <span className="mr-2">⚠️</span>
+                  {error}
                 </div>
               </div>
             )}
             
-            <div className="space-y-8">
+            <div className="space-y-6">
               <div className="group">
-                <label htmlFor="email" className={`block text-lg font-medium ${theme.textColor} mb-3 font-outfit flex items-center`}>
-                  <span className="mr-2 text-xl" aria-hidden="true">
-                    📧
-                  </span>
-                  Email Address
+                <label htmlFor="email" className="block text-sm font-medium text-gray-200 mb-2">
+                  📧 Email Address
                 </label>
                 <input 
                   id="email"
                   type="email" 
-                  placeholder="Enter your professional email" 
+                  placeholder="Enter your email" 
                   value={email} 
                   onChange={e => setEmail(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  className={`w-full px-6 py-4 ${theme.cardClass} border ${theme.borderColor} rounded-xl text-white placeholder-gray-300 ${theme.focusColor} focus:border-transparent transition-all duration-300 backdrop-blur-sm text-lg font-outfit hover-glow`}
+                  onKeyPress={handleKeyPress}
+                  className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-xl text-white placeholder-gray-300 focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all duration-300 backdrop-blur-sm group-hover:bg-white/25"
                 />
               </div>
               
               <div className="group">
-                <label htmlFor="password" className={`block text-lg font-medium ${theme.textColor} mb-3 font-outfit flex items-center`}>
-                  <span className="mr-2 text-xl" aria-hidden="true">
-                    🔐
-                  </span>
-                  Password
+                <label htmlFor="password" className="block text-sm font-medium text-gray-200 mb-2">
+                  🔒 Password
                 </label>
                 <input 
                   id="password"
                   type="password" 
-                  placeholder="Enter your secure password" 
+                  placeholder="Enter your password" 
                   value={password} 
                   onChange={e => setPassword(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  className={`w-full px-6 py-4 ${theme.cardClass} border ${theme.borderColor} rounded-xl text-white placeholder-gray-300 ${theme.focusColor} focus:border-transparent transition-all duration-300 backdrop-blur-sm text-lg font-outfit hover-glow`}
+                  onKeyPress={handleKeyPress}
+                  className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-xl text-white placeholder-gray-300 focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all duration-300 backdrop-blur-sm group-hover:bg-white/25"
                 />
               </div>
               
               <button 
                 onClick={handleLogin} 
                 disabled={isLoading}
-                className={`group relative w-full bg-gradient-to-r ${theme.buttonGradient} text-white py-4 px-6 rounded-xl font-bold text-lg font-space ${theme.buttonHover} focus:ring-2 ${theme.focusColor} focus:ring-offset-2 focus:ring-offset-transparent transition-all duration-300 btn-morphic btn-3d disabled:opacity-50 disabled:cursor-not-allowed hover-lift`}
+                className="group relative w-full bg-gradient-to-r from-cyan-500 to-purple-600 text-white py-3 px-4 rounded-xl font-medium hover:from-cyan-400 hover:to-purple-500 focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-transparent transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span className="relative z-10 flex items-center justify-center">
                   {isLoading ? (
                     <>
-                      <div className="loader-morphic w-6 h-6 mr-3"></div>
-                      <span className="animate-glow">Authenticating...</span>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                      Signing In...
                     </>
                   ) : (
-                    <span className="flex items-center justify-center">
-                      <span className="mr-2 text-xl" aria-hidden="true">✨</span>
-                      Access {getButtonText()}
-                    </span>
+                    <>
+                      <span className="mr-2">🚀</span>
+                      Sign In
+                    </>
                   )}
                 </span>
+                <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl"></div>
               </button>
             </div>
             
-            <div className="text-center mt-8 space-y-4">
-              <p className={`text-lg ${theme.textColor} font-outfit`}>
-                New to our platform?{' '}
+            <div className="text-center mt-6 animate-fade-in-up animation-delay-2000">
+              <p className="text-sm text-gray-300">
+                Don't have an account?{' '}
                 <Link 
                   to={`/signup/${role}`} 
-                  className={`font-bold ${theme.gradientText} hover:scale-105 transition-all duration-300 hover:underline text-liquid`}
+                  className="font-medium text-cyan-400 hover:text-cyan-300 transition-colors duration-300 hover:underline"
                 >
-                  Create Your Account
+                  ✨ Sign up here
                 </Link>
               </p>
-              
-              <div className="flex items-center justify-center space-x-4">
-                <div className={`h-px flex-1 ${theme.accentClass} opacity-30`}></div>
-                <span className={`text-sm ${theme.iconColor} font-space`}>or</span>
-                <div className={`h-px flex-1 ${theme.accentClass} opacity-30`}></div>
-              </div>
-              
+            </div>
+
+            <div className="text-center mt-4 animate-fade-in-up animation-delay-3000">
               <Link 
                 to="/" 
-                className={`inline-flex items-center text-lg ${theme.iconColor} hover:text-white transition-all duration-300 font-outfit hover-glow`}
+                className="text-xs text-gray-400 hover:text-gray-300 transition-colors duration-300"
               >
-                <span className="mr-2" aria-hidden="true">
-                  ←
-                </span>
-                Choose Different Role
+                ← Back to role selection
               </Link>
             </div>
-          </div>
-
-          {/* Role-specific Footer Message */}
-          <div className="text-center mt-8">
-            <p className={`text-xl ${theme.gradientText} font-playfair animate-glow`}>
-              {getFooterMessage()}
-            </p>
           </div>
         </div>
       </div>

@@ -14,6 +14,7 @@ router.get('/users', requireAdmin, async (req: Request, res: Response) => {
     const users = await User.findAll({
       include: [{
         model: DoctorDetails,
+        as: 'DoctorDetail', // Use the correct alias
         required: false // LEFT JOIN to include users without doctor details
       }],
       attributes: { exclude: ['password'] } // Don't send passwords

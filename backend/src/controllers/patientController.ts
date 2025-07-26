@@ -77,6 +77,7 @@ export const filterDoctors = async (req: Request, res: Response) => {
       where: { role: 'doctor' },
       include: [{
         model: DoctorDetails,
+        as: 'DoctorDetail',
         required: true,
         where: whereCondition
       }],
@@ -111,7 +112,7 @@ export const enrollDoctor = async (req: Request, res: Response) => {
     // Check if doctor exists and is approved
     const doctor = await User.findOne({
       where: { id: doctorId, role: 'doctor' },
-      include: [{ model: DoctorDetails, where: { approved: true } }]
+      include: [{ model: DoctorDetails, as: 'DoctorDetail', where: { approved: true } }]
     })
 
     if (!doctor) {
@@ -121,18 +122,18 @@ export const enrollDoctor = async (req: Request, res: Response) => {
 
     const existing = await Enrollment.findOne({ where: { doctorId, patientId } })
     if (existing) {
-      console.log('Enrollment failed: Already enrolled or pending', { doctorId, patientId, existingStatus: existing.status })
-      return res.status(400).json({ error: 'Already enrolled or pending' })
+      console.log('Enrollment failed: Already enrolled', { doctorId, patientId, existingStatus: existing.status })
+      return res.status(400).json({ error: 'Already enrolled' })
     }
 
     const enrollment = await Enrollment.create({
       doctorId,
       patientId,
-      status: 'pending'
+      status: 'approved'
     })
 
     console.log('Enrollment successful:', enrollment.toJSON())
-    res.json({ message: 'Enrollment request sent', enrollment })
+    res.json({ message: 'Successfully enrolled with doctor', enrollment })
   } catch (error) {
     console.error('Error enrolling doctor:', error)
     res.status(500).json({ error: 'Enrollment failed' })

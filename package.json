@@ -19,42 +19,33 @@
     "build:frontend": "cd frontend && npm run build",
     "build:test": "npm run build && npm run test:all",
     "build:prod": "npm run build && npm run test:production",
-    
     "test": "npm run test:all",
     "test:all": "npm run test:unit && npm run test:e2e && npm run test:api && npm run test:performance && npm run test:security && npm run test:vulnerabilities",
     "test:fast": "npm run test:unit && npm run test:e2e && npm run test:api",
-    
     "test:unit": "jest --config jest.config.js",
     "test:unit:coverage": "jest --config jest.config.js --coverage",
     "test:unit:watch": "jest --config jest.config.js --watch",
     "test:unit:debug": "node --inspect-brk node_modules/.bin/jest --runInBand",
     "test:backend": "cd backend && npm test",
     "test:frontend": "cd frontend && npm run test:headless",
-    
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
     "test:e2e:install": "playwright install",
     "test:e2e:headless": "playwright test --headed=false",
-    
     "test:api": "newman run tests/api/mental-health-api.postman_collection.json --reporters cli,html --reporter-html-export test-reports/newman/api-report.html",
     "test:api:report": "newman run tests/api/mental-health-api.postman_collection.json --reporters html --reporter-html-export test-reports/newman/api-report.html",
-    
     "test:performance": "k6 run tests/performance/load-test.js",
     "test:performance:report": "k6 run --out html=test-reports/k6/summary.html tests/performance/load-test.js",
     "test:performance:stress": "k6 run tests/performance/stress-test.js",
     "test:performance:spike": "k6 run tests/performance/spike-test.js",
-    
     "test:security": "node scripts/run-zap-scan.js",
     "test:security:report": "node scripts/run-zap-scan.js --report",
-    
     "test:vulnerabilities": "snyk test",
     "test:vulnerabilities:report": "snyk test --json | snyk-to-html -o test-reports/snyk/vulnerabilities.html",
     "test:vulnerabilities:monitor": "snyk test && snyk monitor",
-    
     "test:accessibility": "lighthouse http://localhost:5173 --output html --output-path test-reports/lighthouse/accessibility.html --chrome-flags=\"--headless\"",
-    
     "test:integration": "jest --config=jest.integration.config.js",
     "test:watch": "concurrently \"npm run test:backend:watch\" \"npm run test:frontend:watch\"",
     "test:backend:watch": "cd backend && npm run test:watch",
@@ -75,7 +66,6 @@
     "lint:frontend": "cd frontend && npm run lint",
     "lint:backend:fix": "cd backend && npm run lint:fix",
     "lint:frontend:fix": "cd frontend && npm run lint:fix",
-    
     "start:test-servers": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
     "test:dashboard": "node scripts/test-dashboard.js",
     "type-check": "npm run type-check:backend && npm run type-check:frontend",

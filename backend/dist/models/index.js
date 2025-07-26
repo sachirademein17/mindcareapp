@@ -15,7 +15,7 @@ Object.defineProperty(exports, "Prescription", { enumerable: true, get: function
 const ChatMessagePG_1 = require("./ChatMessagePG");
 Object.defineProperty(exports, "ChatMessagePG", { enumerable: true, get: function () { return ChatMessagePG_1.ChatMessagePG; } });
 // Define relationships
-User_1.User.hasOne(DoctorDetails_1.DoctorDetails, { foreignKey: 'userId' });
+User_1.User.hasOne(DoctorDetails_1.DoctorDetails, { foreignKey: 'userId', as: 'DoctorDetail' });
 DoctorDetails_1.DoctorDetails.belongsTo(User_1.User, { foreignKey: 'userId' });
 User_1.User.hasMany(Enrollment_1.Enrollment, { foreignKey: 'patientId', as: 'PatientEnrollments' });
 User_1.User.hasMany(Enrollment_1.Enrollment, { foreignKey: 'doctorId', as: 'DoctorEnrollments' });

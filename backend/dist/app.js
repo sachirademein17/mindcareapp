@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.app = void 0;
 // 📁 backend/src/app.ts
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
@@ -24,6 +25,7 @@ const ChatMessagePG_1 = require("./models/ChatMessagePG");
 const meetingRoutes_1 = __importDefault(require("./routes/meetingRoutes"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
+exports.app = app;
 const PORT = process.env.PORT || 5000;
 // Setup HTTP server for Socket.io
 const server = http_1.default.createServer(app);
@@ -32,7 +34,7 @@ app.use((0, cors_1.default)());
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
 // 🔌 REST API Routes
-app.use('/auth', auth_routes_1.default);
+app.use('/api/auth', auth_routes_1.default);
 app.use('/admin', admin_1.default);
 app.use('/doctor', doctorRoutes_1.default);
 app.use('/patient', patientRoutes_1.default);
