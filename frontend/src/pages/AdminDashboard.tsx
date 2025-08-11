@@ -2,12 +2,15 @@
 import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { createApiUrl } from '../config/api'
+import SuspensionModal from '../components/SuspensionModal'
 
 const AdminDashboard = () => {
   const [users, setUsers] = useState([])
   const [selectedDoctor, setSelectedDoctor] = useState<any>(null)
   const [showDoctorModal, setShowDoctorModal] = useState(false)
   const [activeTab, setActiveTab] = useState('doctors')
+  const [selectedUser, setSelectedUser] = useState<any>(null)
+  const [showSuspensionModal, setShowSuspensionModal] = useState(false)
 
   const token = localStorage.getItem('token')
 
@@ -57,6 +60,20 @@ const AdminDashboard = () => {
     setShowDoctorModal(true)
   }
 
+  const handleSuspensionModal = (user: any) => {
+    setSelectedUser(user)
+    setShowSuspensionModal(true)
+  }
+
+  const closeSuspensionModal = () => {
+    setSelectedUser(null)
+    setShowSuspensionModal(false)
+  }
+
+  const onSuspensionSuccess = () => {
+    fetchUsers() // Refresh the user list
+  }
+
   const doctors = users.filter((user: any) => user.role === 'doctor')
   const patients = users.filter((user: any) => user.role === 'patient')
   const pendingDoctors = doctors.filter((doctor: any) => !doctor.DoctorDetail?.approved)
@@ -93,6 +110,19 @@ const AdminDashboard = () => {
           <p className="text-gray-300 text-lg">
             Manage doctors, patients, and system operations
           </p>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="flex justify-center mb-8 animate-fade-in-up">
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20">
+            <a
+              href="/admin/warnings"
+              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-medium rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg"
+            >
+              <span className="mr-2">🚨</span>
+              Manage Warnings & Reports
+            </a>
+          </div>
         </div>
 
         {/* Tab Navigation */}
@@ -206,9 +236,16 @@ const AdminDashboard = () => {
                         <div className="w-12 h-12 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center text-white text-xl font-bold">
                           {doctor.name.charAt(0).toUpperCase()}
                         </div>
-                        <div className="ml-3">
+                        <div className="ml-3 flex-1">
                           <h3 className="text-white font-semibold">{doctor.name}</h3>
                           <p className="text-gray-300 text-sm">{doctor.email}</p>
+                          {doctor.isSuspended && (
+                            <div className="mt-1">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-500/20 text-red-200 border border-red-400/30">
+                                🔒 Suspended
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
                       
@@ -229,6 +266,17 @@ const AdminDashboard = () => {
                           className="flex-1 bg-blue-500 hover:bg-blue-400 text-white px-4 py-2 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 text-sm"
                         >
                           📋 View Details
+                        </button>
+                        <button
+                          onClick={() => handleSuspensionModal(doctor)}
+                          className={`px-3 py-2 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 text-sm ${
+                            doctor.isSuspended
+                              ? 'bg-green-600 hover:bg-green-500 text-white'
+                              : 'bg-orange-600 hover:bg-orange-500 text-white'
+                          }`}
+                          title={doctor.isSuspended ? 'Unsuspend User' : 'Suspend User'}
+                        >
+                          {doctor.isSuspended ? '🔓' : '🔒'}
                         </button>
                         <button
                           onClick={() => deleteUser(doctor.id)}
@@ -268,9 +316,16 @@ const AdminDashboard = () => {
                       <div className="w-12 h-12 bg-gradient-to-r from-blue-400 to-cyan-500 rounded-full flex items-center justify-center text-white text-xl font-bold">
                         {patient.name.charAt(0).toUpperCase()}
                       </div>
-                      <div className="ml-3">
+                      <div className="ml-3 flex-1">
                         <h3 className="text-white font-semibold">{patient.name}</h3>
                         <p className="text-gray-300 text-sm">{patient.email}</p>
+                        {patient.isSuspended && (
+                          <div className="mt-1">
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-500/20 text-red-200 border border-red-400/30">
+                              🔒 Suspended
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                     
@@ -280,7 +335,18 @@ const AdminDashboard = () => {
                       </p>
                     </div>
                     
-                    <div className="flex justify-end">
+                    <div className="flex gap-2 justify-end">
+                      <button
+                        onClick={() => handleSuspensionModal(patient)}
+                        className={`px-3 py-2 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 text-sm ${
+                          patient.isSuspended
+                            ? 'bg-green-600 hover:bg-green-500 text-white'
+                            : 'bg-orange-600 hover:bg-orange-500 text-white'
+                        }`}
+                        title={patient.isSuspended ? 'Unsuspend User' : 'Suspend User'}
+                      >
+                        {patient.isSuspended ? '🔓' : '🔒'}
+                      </button>
                       <button
                         onClick={() => deleteUser(patient.id)}
                         className="bg-red-500 hover:bg-red-400 text-white px-4 py-2 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 text-sm"
@@ -469,6 +535,14 @@ const AdminDashboard = () => {
             </div>
           </div>
         )}
+
+        {/* Suspension Modal */}
+        <SuspensionModal
+          user={selectedUser}
+          isOpen={showSuspensionModal}
+          onClose={closeSuspensionModal}
+          onSuccess={onSuspensionSuccess}
+        />
       </div>
     </div>
   )

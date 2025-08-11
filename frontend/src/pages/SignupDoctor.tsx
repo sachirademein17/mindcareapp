@@ -97,7 +97,7 @@ export default function SignupDoctor() {
         submitData.append('licenseFile', formData.license)
       }
 
-      await axios.post(createApiUrl('api/auth/doctor/signup'), submitData, {
+      await axios.post(createApiUrl('auth/doctor/signup'), submitData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

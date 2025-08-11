@@ -45,6 +45,18 @@ exports.User = postgres_config_1.sequelize.define('User', {
     isApproved: {
         type: sequelize_1.DataTypes.BOOLEAN,
         defaultValue: false
+    },
+    isSuspended: {
+        type: sequelize_1.DataTypes.BOOLEAN,
+        defaultValue: false
+    },
+    suspendedAt: {
+        type: sequelize_1.DataTypes.DATE,
+        allowNull: true
+    },
+    suspendReason: {
+        type: sequelize_1.DataTypes.TEXT,
+        allowNull: true
     }
 });
 const initializeUserModel = async () => {

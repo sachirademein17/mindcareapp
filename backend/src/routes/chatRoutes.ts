@@ -1,12 +1,12 @@
 // 📁 backend/src/routes/chatRoutes.ts
 import express from 'express'
-import { verifyToken } from '../middlewares/auth.middleware'
+import { verifyToken, checkSuspension } from '../middlewares/auth.middleware'
 import { sendMessage, getMessages, getChatList, markAsRead } from '../controllers/chatController'
 
 const router = express.Router()
 
-// All chat routes require authentication
-router.use(verifyToken)
+// All chat routes require authentication and suspension check
+router.use(verifyToken, checkSuspension)
 
 // Send a message
 router.post('/send/:userId', sendMessage)

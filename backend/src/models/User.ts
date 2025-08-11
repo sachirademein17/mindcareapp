@@ -13,6 +13,9 @@ interface UserModel extends Model<InferAttributes<UserModel>, InferCreationAttri
   dob?: Date
   phone?: string
   isApproved: CreationOptional<boolean>
+  isSuspended: CreationOptional<boolean>
+  suspendedAt?: Date
+  suspendReason?: string
 }
 
 export const User = sequelize.define<UserModel>('User', {
@@ -57,6 +60,18 @@ export const User = sequelize.define<UserModel>('User', {
   isApproved: { 
     type: DataTypes.BOOLEAN, 
     defaultValue: false 
+  },
+  isSuspended: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  suspendedAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  suspendReason: {
+    type: DataTypes.TEXT,
+    allowNull: true
   }
 })
 

@@ -2,9 +2,9 @@
 import { User, initializeUserModel } from './User'
 import { DoctorDetails } from './DoctorDetails'
 import { Enrollment } from './Enrollment'
-import { Meeting } from './Meeting'
-import { Prescription } from './Prescription'
 import { ChatMessagePG } from './ChatMessagePG'
+import { Warning } from './Warning'
+import { Meeting } from './Meeting'
 
 // Define relationships
 User.hasOne(DoctorDetails, { foreignKey: 'userId', as: 'DoctorDetail' })
@@ -15,15 +15,22 @@ User.hasMany(Enrollment, { foreignKey: 'doctorId', as: 'DoctorEnrollments' })
 Enrollment.belongsTo(User, { foreignKey: 'patientId', as: 'Patient' })
 Enrollment.belongsTo(User, { foreignKey: 'doctorId', as: 'Doctor' })
 
-Enrollment.hasMany(Meeting, { foreignKey: 'enrollmentId' })
-Meeting.belongsTo(Enrollment, { foreignKey: 'enrollmentId' })
-
-Enrollment.hasMany(Prescription, { foreignKey: 'enrollmentId' })
-Prescription.belongsTo(Enrollment, { foreignKey: 'enrollmentId' })
+// Meeting relationships
+Meeting.belongsTo(User, { foreignKey: 'patientId', as: 'Patient' })
+Meeting.belongsTo(User, { foreignKey: 'doctorId', as: 'Doctor' })
+Meeting.belongsTo(Enrollment, { foreignKey: 'enrollmentId', as: 'Enrollment' })
+User.hasMany(Meeting, { foreignKey: 'patientId', as: 'PatientMeetings' })
+User.hasMany(Meeting, { foreignKey: 'doctorId', as: 'DoctorMeetings' })
+Enrollment.hasMany(Meeting, { foreignKey: 'enrollmentId', as: 'Meetings' })
 
 // Chat message relationships
 ChatMessagePG.belongsTo(User, { foreignKey: 'senderId', as: 'sender' })
 ChatMessagePG.belongsTo(User, { foreignKey: 'receiverId', as: 'receiver' })
+
+// Warning relationships
+Warning.belongsTo(User, { foreignKey: 'reporterId', as: 'Reporter' })
+Warning.belongsTo(User, { foreignKey: 'reportedUserId', as: 'ReportedUser' })
+Warning.belongsTo(User, { foreignKey: 'adminId', as: 'Admin' })
 User.hasMany(ChatMessagePG, { foreignKey: 'senderId', as: 'sentMessages' })
 User.hasMany(ChatMessagePG, { foreignKey: 'receiverId', as: 'receivedMessages' })
 
@@ -45,11 +52,11 @@ export const initializeAllModels = async () => {
     await Meeting.sync({ alter: true })
     console.log('✅ Meeting model synced')
     
-    await Prescription.sync({ alter: true })
-    console.log('✅ Prescription model synced')
-    
     await ChatMessagePG.sync({ alter: true })
     console.log('✅ ChatMessagePG model synced')
+    
+    await Warning.sync({ alter: true })
+    console.log('✅ Warning model synced')
     
     console.log('✅ All models initialized successfully')
     console.log('📝 Note: ChatMessage now uses PostgreSQL with proper foreign keys')
@@ -62,7 +69,7 @@ export {
   User,
   DoctorDetails,
   Enrollment,
-  Meeting,
-  Prescription,
-  ChatMessagePG
+  ChatMessagePG,
+  Warning,
+  Meeting
 }

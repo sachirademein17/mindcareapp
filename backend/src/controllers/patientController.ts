@@ -2,7 +2,6 @@ import { Request, Response } from 'express'
 import { User } from '../models/User'
 import { Enrollment } from '../models/Enrollment'
 import { DoctorDetails } from '../models/DoctorDetails'
-import { Prescription } from '../models/Prescription'
 import { Op } from 'sequelize'
 
 export const getEnrolledDoctors = async (req: Request, res: Response) => {
@@ -17,10 +16,15 @@ export const getEnrolledDoctors = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Invalid patient ID' })
     }
 
+    console.log('🔍 Fetching enrollments for patient:', patientId)
+
     const enrollments = await Enrollment.findAll({
       where: { patientId, status: 'approved' },
       include: [{ model: User, as: 'Doctor', attributes: ['id', 'name', 'email'] }]
     })
+
+    console.log('📋 Found enrollments:', enrollments.length)
+    console.log('📄 Enrollment details:', JSON.stringify(enrollments, null, 2))
 
     res.json(enrollments)
   } catch (error) {
@@ -245,67 +249,5 @@ export const cancelEnrollmentByDoctor = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error cancelling enrollment:', error)
     res.status(500).json({ error: 'Failed to cancel enrollment' })
-  }
-}   
-
-export const getPrescriptions = async (req: Request, res: Response) => {
-  try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'User not authenticated' })
-    }
-    
-    const patientId = parseInt(req.user.id)
-
-    if (isNaN(patientId)) {
-      return res.status(400).json({ error: 'Invalid patient ID' })
-    }
-
-    const prescriptions = await Prescription.findAll({
-      include: [{
-        model: Enrollment,
-        where: { patientId },
-        include: [{
-          model: User,
-          as: 'Doctor',
-          attributes: ['id', 'name', 'email']
-        }]
-      }],
-      order: [['createdAt', 'DESC']]
-    })
-
-    res.json(prescriptions)
-  } catch (error) {
-    console.error('Error fetching prescriptions:', error)
-    res.status(500).json({ error: 'Failed to fetch prescriptions' })
-  }
-}
-
-// 🔒 Security: Log prescription page security violations
-export const logSecurityViolation = async (req: Request, res: Response) => {
-  try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'User not authenticated' })
-    }
-    
-    const { violationType, timestamp, userAgent } = req.body
-    const patientId = parseInt(req.user.id)
-
-    // Log security violation
-    console.warn('🔒 SECURITY VIOLATION DETECTED:', {
-      patientId,
-      patientEmail: req.user.email,
-      violationType,
-      timestamp: new Date(timestamp),
-      userAgent,
-      ip: req.ip || req.connection.remoteAddress
-    })
-
-    // In a production environment, you would save this to a security audit table
-    // await SecurityAudit.create({ patientId, violationType, timestamp, userAgent, ip })
-
-    res.json({ message: 'Security violation logged' })
-  } catch (error) {
-    console.error('Error logging security violation:', error)
-    res.status(500).json({ error: 'Failed to log security violation' })
   }
 }

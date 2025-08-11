@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindCare AWS Deployment Guide</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: #007bff;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2em;
+        }
+        .step {
+            background: #f8f9fa;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .step-header {
+            background: #007bff;
+            color: white;
+            padding: 15px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        .step-content {
+            padding: 20px;
+        }
+        .substep {
+            margin: 15px 0;
+            padding: 15px;
+            background: white;
+            border-left: 4px solid #007bff;
+            border-radius: 3px;
+        }
+        .substep h4 {
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+        pre {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background: #007bff;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        li {
+            margin: 5px 0;
+        }
+        .architecture {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 5px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧠 MindCare AWS Deployment Guide</h1>
+            <p>Deploy your Mental Health Platform on AWS with Ubuntu EC2, PostgreSQL RDS, and S3</p>
+        </div>
+
+        <div class="architecture">
+            <h2>🏗️ Architecture Overview</h2>
+            <p><strong>Your MindCare platform architecture:</strong></p>
+            <pre>
+Internet Users
+     ↓
+🌐 CloudFront → 📦 S3 (Frontend)
+     ↓
+🖥️ EC2 Ubuntu (Backend API)
+     ↓
+🗄️ RDS PostgreSQL (Database)
+     ↓
+📁 S3 (File Uploads: CVs, Documents)
+            </pre>
+        </div>
+
+        <h2>📋 Table of Contents</h2>
+        <ul>
+            <li><a href="#prerequisites">Prerequisites</a></li>
+            <li><a href="#rds-setup">Step 1: RDS PostgreSQL Setup</a></li>
+            <li><a href="#s3-setup">Step 2: S3 Bucket Configuration</a></li>
+            <li><a href="#ec2-setup">Step 3: EC2 Ubuntu Server</a></li>
+            <li><a href="#backend-deploy">Step 4: Backend Deployment</a></li>
+            <li><a href="#frontend-deploy">Step 5: Frontend Deployment</a></li>
+            <li><a href="#testing">Step 6: Testing</a></li>
+            <li><a href="#costs">Cost Breakdown</a></li>
+        </ul>
+
+        <div class="step" id="prerequisites">
+            <div class="step-header">📋 Prerequisites</div>
+            <div class="step-content">
+                <div class="info">
+                    <strong>Before you start, ensure you have:</strong>
+                    <ul>
+                        <li>✅ AWS Account with appropriate permissions</li>
+                        <li>✅ AWS CLI installed and configured</li>
+                        <li>✅ Your MindCare project ready and tested locally</li>
+                        <li>✅ Domain name (optional but recommended)</li>
+                        <li>✅ SSH client (Terminal/PuTTY)</li>
+                    </ul>
+                </div>
+                
+                <div class="substep">
+                    <h4>🔧 Install AWS CLI</h4>
+                    <pre>
+# Windows (PowerShell)
+msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi
+
+# macOS
+curl "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "AWSCLIV2.pkg"
+sudo installer -pkg AWSCLIV2.pkg -target /
+
+# Linux
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+                    </pre>
+                </div>
+
+                <div class="substep">
+                    <h4>⚙️ Configure AWS CLI</h4>
+                    <pre>
+aws configure
+# Enter your AWS Access Key ID
+# Enter your AWS Secret Access Key  
+# Default region: us-east-1
+# Default output format: json
+                    </pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="step" id="rds-setup">
+            <div class="step-header">🗄️ Step 1: RDS PostgreSQL Database Setup</div>
+            <div class="step-content">
+                <div class="substep">
+                    <h4>1.1 Create RDS Security Group</h4>
+                    <pre>
+# Create security group for RDS
+aws ec2 create-security-group \
+    --group-name mindcare-rds-sg \
+    --description "Security group for MindCare RDS PostgreSQL"
+
+# Add PostgreSQL access rule
+aws ec2 authorize-security-group-ingress \
+    --group-name mindcare-rds-sg \
+    --protocol tcp \
+    --port 5432 \
+    --cidr 10.0.0.0/16
+                    </pre>
+                </div>
+
+                <div class="substep">
+                    <h4>1.2 Create RDS PostgreSQL Instance</h4>
+                    <pre>
+aws rds create-db-instance \
+    --db-instance-identifier mindcare-db \
+    --db-instance-class db.t3.micro \
+    --engine postgres \
+    --engine-version 15.4 \
+    --master-username postgres \
+    --master-user-password "YourSecurePassword123!" \
+    --allocated-storage 20 \
+    --storage-type gp2 \
+    --backup-retention-period 7 \
+    --storage-encrypted \
+    --db-name mindcare_production
+                    </pre>
+                </div>
+
+                <div class="warning">
+                    <strong>⚠️ Important:</strong> RDS instance creation takes 5-10 minutes. Save your password securely!
+                </div>
+
+                <div class="substep">
+                    <h4>1.3 Get RDS Endpoint</h4>
+                    <pre>
+# Get the endpoint once RDS is available
+aws rds describe-db-instances \
+    --db-instance-identifier mindcare-db \
+    --query 'DBInstances[0].Endpoint.Address' \
+    --output text
+                    </pre>
+                    <p>Save this endpoint - you'll need it for your backend configuration.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="step" id="s3-setup">
+            <div class="step-header">📁 Step 2: S3 Bucket Configuration</div>
+            <div class="step-content">
+                <div class="substep">
+                    <h4>2.1 Create S3 Buckets</h4>
+                    <pre>
+# Bucket for file uploads (CVs, documents)
+aws s3 mb s3://mindcare-file-uploads-yourname --region us-east-1
+
+# Bucket for frontend static files
+aws s3 mb s3://mindcare-frontend-yourname --region us-east-1
+                    </pre>
+                    <div class="warning">
+                        <strong>⚠️ Important:</strong> S3 bucket names must be globally unique. Replace "yourname" with something unique.
+                    </div>
+                </div>
+
+                <div class="substep">
+                    <h4>2.2 Configure File Uploads Bucket CORS</h4>
+                    <p>Create a file named <code>cors-config.json</code>:</p>
+                    <pre>
+{
+    "CORSRules": [
+        {
+            "AllowedHeaders": ["*"],
+            "AllowedMethods": ["GET", "PUT", "POST", "DELETE"],
+            "AllowedOrigins": ["*"],
+            "ExposeHeaders": ["ETag"],
+            "MaxAgeSeconds": 3000
+        }
+    ]
+}
+                    </pre>
+                    <pre>
+# Apply CORS configuration
+aws s3api put-bucket-cors \
+    --bucket mindcare-file-uploads-yourname \
+    --cors-configuration file://cors-config.json
+                    </pre>
+                </div>
+
+                <div class="substep">
+                    <h4>2.3 Configure Frontend Bucket for Static Hosting</h4>
+                    <pre>
+# Enable static website hosting
+aws s3 website s3://mindcare-frontend-yourname \
+    --index-document index.html \
+    --error-document index.html
+                    </pre>
+                </div>
+
+                <div class="substep">
+                    <h4>2.4 Create IAM User for S3 Access</h4>
+                    <pre>
+# Create IAM user for application S3 access
+aws iam create-user --user-name mindcare-s3-user
+
+# Create access key
+aws iam create-access-key --user-name mindcare-s3-user
+
+# Attach S3 policy
+aws iam attach-user-policy \
+    --user-name mindcare-s3-user \
+    --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess
+                    </pre>
+                    <div class="warning">
+                        <strong>⚠️ Important:</strong> Save the Access Key ID and Secret Access Key for your backend configuration.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="step" id="ec2-setup">
+            <div class="step-header">🖥️ Step 3: EC2 Ubuntu Server Setup</div>
+            <div class="step-content">
+                <div class="substep">
+                    <h4>3.1 Create EC2 Key Pair</h4>
+                    <pre>
+# Create key pair
+aws ec2 create-key-pair \
+    --key-name mindcare-key \
+    --query 'KeyMaterial' \
+    --output text > mindcare-key.pem
+
+# Set correct permissions (Linux/Mac)
+chmod 400 mindcare-key.pem
+                    </pre>
+                </div>
+
+                <div class="substep">
+                    <h4>3.2 Create Security Group for EC2</h4>
+                    <pre>
+# Create security group
+aws ec2 create-security-group \
+    --group-name mindcare-ec2-sg \
+    --description "Security group for MindCare EC2 instance"
+
+# Add access rules
+aws ec2 authorize-security-group-ingress --group-name mindcare-ec2-sg --protocol tcp --port 22 --cidr 0.0.0.0/0
+aws ec2 authorize-security-group-ingress --group-name mindcare-ec2-sg --protocol tcp --port 80 --cidr 0.0.0.0/0
+aws ec2 authorize-security-group-ingress --group-name mindcare-ec2-sg --protocol tcp --port 443 --cidr 0.0.0.0/0
+aws ec2 authorize-security-group-ingress --group-name mindcare-ec2-sg --protocol tcp --port 5000 --cidr 0.0.0.0/0
+                    </pre>
+                </div>
+
+                <div class="substep">
+                    <h4>3.3 Launch EC2 Ubuntu Instance</h4>
+                    <pre>
+# Find latest Ubuntu 22.04 LTS AMI
+aws ec2 describe-images \
+    --owners 099720109477 \
+    --filters "Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*" \
+    --query 'Images | sort_by(@, &CreationDate) | [-1].ImageId' \
+    --output text
+
+# Launch instance (replace ami-id with result from above)
+aws ec2 run-instances \
+    --image-id ami-0c02fb55956c7d316 \
+    --count 1 \
+    --instance-type t3.medium \
+    --key-name mindcare-key \
+    --security-groups mindcare-ec2-sg \
+    --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=MindCare-Backend}]'
+                    </pre>
+                </div>
+
+                <div class="substep">
+                    <h4>3.4 Get EC2 Instance Public IP</h4>
+                    <pre>
+# Get public IP address
+aws ec2 describe-instances \
+    --filters "Name=tag:Name,Values=MindCare-Backend" \
+    --query 'Reservations[0].Instances[0].PublicIpAddress' \
+    --output text
+                    </pre>
+                    <p>Save this IP address - you'll use it to connect to your server.</p>
+                </div>
+
+                <div class="substep">
+                    <h4>3.5 Connect and Install Dependencies</h4>
+                    <pre>
+# Connect via SSH
+ssh -i mindcare-key.pem ubuntu@YOUR_EC2_PUBLIC_IP
+
+# Update system
+sudo apt update && sudo apt upgrade -y
+
+# Install Node.js 18
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# Install additional tools
+sudo npm install -g pm2
+sudo apt install -y nginx postgresql-client git unzip
+
+# Create application directory
+sudo mkdir -p /var/www/mindcare
+sudo chown ubuntu:ubuntu /var/www/mindcare
+                    </pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="step" id="backend-deploy">
+            <div class="step-header">🚀 Step 4: Backend Deployment</div>
+            <div class="step-content">
+                <div class="substep">
+                    <h4>4.1 Upload Backend Code</h4>
+                    <p>On your local machine:</p>
+                    <pre>
+# Go to your project directory
+cd backend
+npm run build
+
+# Create deployment package
+tar -czf mindcare-backend.tar.gz dist/ package.json package-lock.json src/ uploads/
+
+# Upload to EC2 (replace with your IP)
+scp -i mindcare-key.pem mindcare-backend.tar.gz ubuntu@YOUR_EC2_IP:/var/www/mindcare/
+                    </pre>
+                </div>
+
+                <div class="substep">
+                    <h4>4.2 Set Up Backend on Server</h4>
+                    <pre>
+# SSH into your server
+ssh -i mindcare-key.pem ubuntu@YOUR_EC2_IP
+
+# Navigate and extract
+cd /var/www/mindcare
+tar -xzf mindcare-backend.tar.gz
+
+# Install dependencies
+npm ci --production
+
+# Create uploads directory
+mkdir -p uploads
+chmod 755 uploads
+                    </pre>
+                </div>
+
+                <div class="substep">
+                    <h4>4.3 Configure Environment Variables</h4>
+                    <pre>
+# Create production environment file
+nano .env
+                    </pre>
+                    <p>Add these environment variables (update with your actual values):</p>
+                    <pre>
+NODE_ENV=production
+PORT=5000
+
+# Database Configuration
+DB_HOST=your-rds-endpoint.region.rds.amazonaws.com
+DB_PORT=5432
+DB_NAME=mindcare_production
+DB_USER=postgres
+DB_PASSWORD=YourSecurePassword123!
+
+# JWT Configuration
+JWT_SECRET=your-super-secure-jwt-secret-for-production-min-32-chars
+
+# AWS S3 Configuration
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=your-s3-access-key-id
+AWS_SECRET_ACCESS_KEY=your-s3-secret-access-key
+AWS_S3_BUCKET=mindcare-file-uploads-yourname
+
+# CORS Configuration
+CORS_ORIGIN=https://your-domain.com
+
+# File Upload Configuration
+MAX_FILE_SIZE=10485760
+UPLOAD_PATH=./uploads
+                    </pre>
+                </div>
+
+                <div class="substep">
+                    <h4>4.4 Test Database Connection</h4>
+                    <pre>
+# Test PostgreSQL connection
+PGPASSWORD=YourSecurePassword123! psql \
+    -h your-rds-endpoint.region.rds.amazonaws.com \
+    -U postgres \
+    -d mindcare_production \
+    -c "SELECT version();"
+                    </pre>
+                </div>
+
+                <div class="substep">
+                    <h4>4.5 Start Application with PM2</h4>
+                    <pre>
+# Run database migrations if needed
+npm run migrate
+
+# Start the application
+pm2 start dist/app.js --name mindcare-backend
+
+# Save PM2 configuration
+pm2 save
+pm2 startup systemd
+
+# Check status
+pm2 status
+pm2 logs mindcare-backend
+                    </pre>
+                </div>
+
+                <div class="substep">
+                    <h4>4.6 Configure Nginx</h4>
+                    <pre>
+# Create Nginx configuration
+sudo nano /etc/nginx/sites-available/mindcare
+                    </pre>
+                    <p>Add this configuration:</p>
+                    <pre>
+server {
+    listen 80;
+    server_name your-domain.com www.your-domain.com;
+
+    location / {
+        proxy_pass http://localhost:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+                    </pre>
+                    <pre>
+# Enable the site
+sudo ln -s /etc/nginx/sites-available/mindcare /etc/nginx/sites-enabled/
+sudo rm /etc/nginx/sites-enabled/default
+sudo nginx -t
+sudo systemctl reload nginx
+                    </pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="step" id="frontend-deploy">
+            <div class="step-header">🌐 Step 5: Frontend Deployment</div>
+            <div class="step-content">
+                <div class="substep">
+                    <h4>5.1 Build and Deploy Frontend</h4>
+                    <p>On your local machine:</p>
+                    <pre>
+# Go to frontend directory
+cd frontend
+
+# Create production environment
+echo "VITE_API_URL=https://your-domain.com" > .env.production
+echo "VITE_NODE_ENV=production" >> .env.production
+
+# Build for production
+npm ci
+npm run build
+
+# Upload to S3 bucket
+aws s3 sync dist/ s3://mindcare-frontend-yourname --delete
+
+# Set proper content types
+aws s3 cp s3://mindcare-frontend-yourname/index.html s3://mindcare-frontend-yourname/index.html \
+    --metadata-directive REPLACE \
+    --content-type "text/html" \
+    --cache-control "no-cache"
+                    </pre>
+                </div>
+
+                <div class="substep">
+                    <h4>5.2 Make Frontend Bucket Public</h4>
+                    <p>Create <code>bucket-policy.json</code>:</p>
+                    <pre>
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "PublicReadGetObject",
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::mindcare-frontend-yourname/*"
+        }
+    ]
+}
+                    </pre>
+                    <pre>
+# Apply bucket policy
+aws s3api put-bucket-policy --bucket mindcare-frontend-yourname --policy file://bucket-policy.json
+                    </pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="step" id="testing">
+            <div class="step-header">✅ Step 6: Testing & Verification</div>
+            <div class="step-content">
+                <div class="substep">
+                    <h4>6.1 Backend API Testing</h4>
+                    <pre>
+# Test health endpoint
+curl http://YOUR_EC2_IP:5000/api/health
+
+# Test user registration
+curl -X POST http://YOUR_EC2_IP:5000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Test User",
+    "email": "test@example.com",
+    "password": "testpassword123",
+    "role": "patient"
+  }'
+                    </pre>
+                </div>
+
+                <div class="substep">
+                    <h4>6.2 Frontend Testing</h4>
+                    <div class="success">
+                        <strong>✅ Test Checklist:</strong>
+                        <ul>
+                            <li>Open your S3 website URL in browser</li>
+                            <li>Test user registration and login</li>
+                            <li>Test doctor registration with CV upload</li>
+                            <li>Test patient dashboard functionality</li>
+                            <li>Test admin panel access</li>
+                            <li>Check browser console for errors</li>
+                            <li>Test on mobile devices</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="substep">
+                    <h4>6.3 S3 File Upload Verification</h4>
+                    <pre>
+# List uploaded files
+aws s3 ls s3://mindcare-file-uploads-yourname/ --recursive
+
+# Check file permissions
+aws s3api get-object-acl --bucket mindcare-file-uploads-yourname --key uploads/sample-file.pdf
+                    </pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="step" id="costs">
+            <div class="step-header">💰 Cost Breakdown</div>
+            <div class="step-content">
+                <h3>AWS Free Tier (First 12 months)</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Service</th>
+                            <th>Free Tier Limits</th>
+                            <th>After Free Tier (Monthly)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>EC2 t2.micro</td>
+                            <td>750 hours/month (FREE)</td>
+                            <td>~$8-10</td>
+                        </tr>
+                        <tr>
+                            <td>EC2 t3.medium</td>
+                            <td>Not included in free tier</td>
+                            <td>~$30-40</td>
+                        </tr>
+                        <tr>
+                            <td>RDS db.t3.micro</td>
+                            <td>750 hours/month (FREE)</td>
+                            <td>~$15-20</td>
+                        </tr>
+                        <tr>
+                            <td>S3 Storage</td>
+                            <td>5 GB (FREE)</td>
+                            <td>$0.023/GB</td>
+                        </tr>
+                        <tr>
+                            <td>Data Transfer</td>
+                            <td>15 GB outbound (FREE)</td>
+                            <td>$0.09/GB</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="info">
+                    <h4>💡 Cost Optimization Tips:</h4>
+                    <ul>
+                        <li>Start with t2.micro for testing (free tier eligible)</li>
+                        <li>Use CloudWatch to monitor resource usage</li>
+                        <li>Set up billing alerts</li>
+                        <li>Stop instances when not in use</li>
+                        <li>Use S3 lifecycle policies for old files</li>
+                    </ul>
+                </div>
+
+                <h3>Estimated Monthly Costs (After Free Tier)</h3>
+                <ul>
+                    <li><strong>Light Usage (t2.micro):</strong> ~$28/month</li>
+                    <li><strong>Medium Usage (t3.medium):</strong> ~$70/month</li>
+                    <li><strong>Production Usage (t3.large):</strong> ~$130/month</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="success">
+            <h2>🎉 Deployment Complete!</h2>
+            <p><strong>Your MindCare platform is now live on AWS with:</strong></p>
+            <ul>
+                <li>✅ Ubuntu EC2 server with Node.js backend</li>
+                <li>✅ PostgreSQL RDS database</li>
+                <li>✅ S3 buckets for file storage and static hosting</li>
+                <li>✅ Nginx reverse proxy</li>
+                <li>✅ PM2 process management</li>
+                <li>✅ Security groups and access controls</li>
+            </ul>
+            <p><em>Your mental health platform is ready to help people! 🌍💙</em></p>
+        </div>
+
+        <div style="background: #2d3748; color: white; text-align: center; padding: 20px; border-radius: 5px; margin-top: 30px;">
+            <h3>📞 Need Help?</h3>
+            <p>If you encounter any issues during deployment, check the AWS CloudWatch logs and PM2 logs for debugging.</p>
+            <p><strong>Quick Commands:</strong></p>
+            <pre style="text-align: left; display: inline-block;">
+# Check PM2 status
+pm2 status
+
+# View logs
+pm2 logs mindcare-backend
+
+# Restart backend
+pm2 restart mindcare-backend
+
+# Check Nginx
+sudo systemctl status nginx
+            </pre>
+        </div>
+    </div>
+</body>
+</html>

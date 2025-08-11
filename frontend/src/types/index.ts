@@ -46,18 +46,6 @@ export interface ChatUser {
   role: string;
 }
 
-// Meeting Types
-export interface Meeting {
-  id: number;
-  patient_id: number;
-  doctor_id: number;
-  meeting_time: string;
-  status: 'scheduled' | 'completed' | 'cancelled';
-  notes?: string;
-  patient?: User;
-  doctor?: User;
-}
-
 // Form Types
 export interface LoginFormData {
   email: string;
@@ -89,15 +77,23 @@ export interface ApiError {
   status?: number;
 }
 
-// Prescription Types
-export interface Prescription {
+// Warning Types
+export interface Warning {
   id: number;
-  patient_id: number;
-  doctor_id: number;
-  medication: string;
-  dosage: string;
-  instructions: string;
-  prescribed_date: string;
-  doctor?: User;
-  patient?: User;
+  reporterId: number;
+  reporterType: 'patient' | 'doctor';
+  reportedUserId: number;
+  reportedUserType: 'patient' | 'doctor';
+  category: 'inappropriate_behavior' | 'harassment' | 'unprofessional_conduct' | 'spam' | 'other';
+  title: string;
+  description: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  status: 'pending' | 'under_review' | 'resolved' | 'dismissed';
+  adminNotes?: string;
+  adminId?: number;
+  createdAt: string;
+  updatedAt: string;
+  Reporter?: User;
+  ReportedUser?: User;
+  Admin?: User;
 }

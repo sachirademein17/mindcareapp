@@ -101,6 +101,7 @@
     "clean": "rimraf backend/dist backend/coverage frontend/dist frontend/coverage node_modules backend/node_modules frontend/node_modules reports"
   },
   "devDependencies": {
+    "@cucumber/cucumber": "^12.1.0",
     "@mswjs/data": "^0.16.1",
     "@playwright/test": "^1.40.0",
     "@types/jest": "^29.5.5",
@@ -137,5 +138,8 @@
     "ci-cd"
   ],
   "author": "Your Name",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^3.0.2"
+  }
 }

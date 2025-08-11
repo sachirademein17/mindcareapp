@@ -1,10 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.logSecurityViolation = exports.getPrescriptions = exports.cancelEnrollmentByDoctor = exports.getEnrollmentStatusByDoctor = exports.getEnrollmentStatus = exports.cancelEnrollment = exports.enrollDoctor = exports.filterDoctors = exports.getAllEnrollments = exports.getEnrolledDoctors = void 0;
+exports.cancelEnrollmentByDoctor = exports.getEnrollmentStatusByDoctor = exports.getEnrollmentStatus = exports.cancelEnrollment = exports.enrollDoctor = exports.filterDoctors = exports.getAllEnrollments = exports.getEnrolledDoctors = void 0;
 const User_1 = require("../models/User");
 const Enrollment_1 = require("../models/Enrollment");
 const DoctorDetails_1 = require("../models/DoctorDetails");
-const Prescription_1 = require("../models/Prescription");
 const sequelize_1 = require("sequelize");
 const getEnrolledDoctors = async (req, res) => {
     try {
@@ -15,10 +14,13 @@ const getEnrolledDoctors = async (req, res) => {
         if (isNaN(patientId)) {
             return res.status(400).json({ error: 'Invalid patient ID' });
         }
+        console.log('🔍 Fetching enrollments for patient:', patientId);
         const enrollments = await Enrollment_1.Enrollment.findAll({
             where: { patientId, status: 'approved' },
             include: [{ model: User_1.User, as: 'Doctor', attributes: ['id', 'name', 'email'] }]
         });
+        console.log('📋 Found enrollments:', enrollments.length);
+        console.log('📄 Enrollment details:', JSON.stringify(enrollments, null, 2));
         res.json(enrollments);
     }
     catch (error) {
@@ -217,59 +219,3 @@ const cancelEnrollmentByDoctor = async (req, res) => {
     }
 };
 exports.cancelEnrollmentByDoctor = cancelEnrollmentByDoctor;
-const getPrescriptions = async (req, res) => {
-    try {
-        if (!req.user) {
-            return res.status(401).json({ error: 'User not authenticated' });
-        }
-        const patientId = parseInt(req.user.id);
-        if (isNaN(patientId)) {
-            return res.status(400).json({ error: 'Invalid patient ID' });
-        }
-        const prescriptions = await Prescription_1.Prescription.findAll({
-            include: [{
-                    model: Enrollment_1.Enrollment,
-                    where: { patientId },
-                    include: [{
-                            model: User_1.User,
-                            as: 'Doctor',
-                            attributes: ['id', 'name', 'email']
-                        }]
-                }],
-            order: [['createdAt', 'DESC']]
-        });
-        res.json(prescriptions);
-    }
-    catch (error) {
-        console.error('Error fetching prescriptions:', error);
-        res.status(500).json({ error: 'Failed to fetch prescriptions' });
-    }
-};
-exports.getPrescriptions = getPrescriptions;
-// 🔒 Security: Log prescription page security violations
-const logSecurityViolation = async (req, res) => {
-    try {
-        if (!req.user) {
-            return res.status(401).json({ error: 'User not authenticated' });
-        }
-        const { violationType, timestamp, userAgent } = req.body;
-        const patientId = parseInt(req.user.id);
-        // Log security violation
-        console.warn('🔒 SECURITY VIOLATION DETECTED:', {
-            patientId,
-            patientEmail: req.user.email,
-            violationType,
-            timestamp: new Date(timestamp),
-            userAgent,
-            ip: req.ip || req.connection.remoteAddress
-        });
-        // In a production environment, you would save this to a security audit table
-        // await SecurityAudit.create({ patientId, violationType, timestamp, userAgent, ip })
-        res.json({ message: 'Security violation logged' });
-    }
-    catch (error) {
-        console.error('Error logging security violation:', error);
-        res.status(500).json({ error: 'Failed to log security violation' });
-    }
-};
-exports.logSecurityViolation = logSecurityViolation;

@@ -1,27 +1,88 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import axios from 'axios'
-import MeetingCalendar from '../common/MeetingCalendar'
+import ReportUserModal from '../../components/ReportUserModal'
+import UnifiedMeetingCalendar from '../../components/UnifiedMeetingCalendar'
+import MeetingDetailModal from '../../components/MeetingDetailModal'
+
+interface Meeting {
+  id: number
+  patientId: number
+  doctorId: number
+  enrollmentId: number
+  scheduledAt: string
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled' | 'completed'
+  patientNotes?: string
+  doctorNotes?: string
+  rejectionReason?: string
+  meetingUrl?: string
+  duration: number
+  requestedAt: string
+  approvedAt?: string
+  cancelledAt?: string
+  completedAt?: string
+  Patient?: {
+    id: number
+    name: string
+    email: string
+  }
+  Doctor?: {
+    id: number
+    name: string
+    email: string
+    DoctorDetail?: {
+      specialization: string
+    }
+  }
+}
 
 const PatientDashboard = () => {
-  const [doctors, setDoctors] = useState([])
-  const [patientId, setPatientId] = useState<number>(0)
+  const [doctors, setDoctors] = useState<any[]>([])
+  const [reportModalOpen, setReportModalOpen] = useState(false)
+  const [reportingDoctor, setReportingDoctor] = useState<{ id: number; name: string; role: 'doctor' } | null>(null)
+  const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null)
+  const [showMeetingModal, setShowMeetingModal] = useState(false)
 
   useEffect(() => {
-    // Get patient ID from localStorage
-    const userId = localStorage.getItem('userId')
-    if (userId) {
-      setPatientId(parseInt(userId))
-    }
-    
     fetchApprovedEnrollments()
   }, [])
 
   const fetchApprovedEnrollments = () => {
     axios.get('http://localhost:5000/patient/enrollments', {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-    }).then(res => setDoctors(res.data))
-      .catch(err => console.error('Error fetching doctors:', err))
+    }).then(res => {
+      // Handle direct array response
+      const enrollments = Array.isArray(res.data) ? res.data : []
+      setDoctors(enrollments)
+    })
+      .catch(err => {
+        console.error('Error fetching doctors:', err)
+        setDoctors([])
+      })
+  }
+
+  const handleReportDoctor = (doctor: any) => {
+    setReportingDoctor({
+      id: doctor.Doctor?.id || doctor.doctorId,
+      name: doctor.Doctor?.name || 'Unknown Doctor',
+      role: 'doctor'
+    })
+    setReportModalOpen(true)
+  }
+
+  const handleReportSubmitted = () => {
+    setReportModalOpen(false)
+    setReportingDoctor(null)
+  }
+
+  const handleMeetingClick = (meeting: Meeting) => {
+    setSelectedMeeting(meeting)
+    setShowMeetingModal(true)
+  }
+
+  const handleMeetingModalClose = () => {
+    setShowMeetingModal(false)
+    setSelectedMeeting(null)
   }
 
   return (
@@ -51,7 +112,7 @@ const PatientDashboard = () => {
         </div>
         
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8 animate-fade-in-up">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8 animate-fade-in-up">
           <Link 
             to="/patient/find-doctors" 
             className="group bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 text-white p-6 rounded-2xl shadow-xl transform transition-all duration-300 hover:scale-105 hover:shadow-2xl"
@@ -64,17 +125,6 @@ const PatientDashboard = () => {
           </Link>
 
           <Link 
-            to="/patient/prescriptions" 
-            className="group bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-400 hover:to-teal-500 text-white p-6 rounded-2xl shadow-xl transform transition-all duration-300 hover:scale-105 hover:shadow-2xl"
-          >
-            <div className="flex items-center justify-center mb-3">
-              <span className="text-4xl group-hover:animate-bounce">📋</span>
-            </div>
-            <h3 className="text-xl font-semibold text-center">View Prescriptions</h3>
-            <p className="text-green-100 text-center mt-2">Access your medical prescriptions</p>
-          </Link>
-
-          <Link 
             to="/patient/chat" 
             className="group bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-400 hover:to-pink-500 text-white p-6 rounded-2xl shadow-xl transform transition-all duration-300 hover:scale-105 hover:shadow-2xl"
           >
@@ -83,6 +133,17 @@ const PatientDashboard = () => {
             </div>
             <h3 className="text-xl font-semibold text-center">Chat with Doctors</h3>
             <p className="text-purple-100 text-center mt-2">Connect and communicate securely</p>
+          </Link>
+
+          <Link 
+            to="/patient/meetings" 
+            className="group bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white p-6 rounded-2xl shadow-xl transform transition-all duration-300 hover:scale-105 hover:shadow-2xl"
+          >
+            <div className="flex items-center justify-center mb-3">
+              <span className="text-4xl group-hover:animate-bounce">📅</span>
+            </div>
+            <h3 className="text-xl font-semibold text-center">Schedule Meetings</h3>
+            <p className="text-emerald-100 text-center mt-2">Book and manage appointments</p>
           </Link>
 
           <Link 
@@ -108,13 +169,8 @@ const PatientDashboard = () => {
           </Link>
         </div>
 
-        {/* Meeting Calendar Section */}
-        <div className="mb-8 animate-slide-in-left">
-          <MeetingCalendar userId={patientId} enrollments={doctors} />
-        </div>
-
         {/* Current Doctors Section */}
-        <div className="bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl p-8 border border-white/20 animate-slide-in-left">
+        <div className="bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl p-8 border border-white/20 animate-slide-in-left mb-8">
           <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
             👨‍⚕️ My Current Doctors
           </h2>
@@ -149,8 +205,12 @@ const PatientDashboard = () => {
                       <button className="bg-purple-500 hover:bg-purple-400 text-white px-3 py-1 rounded-lg text-xs transition-all duration-300">
                         💬 Chat
                       </button>
-                      <button className="bg-blue-500 hover:bg-blue-400 text-white px-3 py-1 rounded-lg text-xs transition-all duration-300">
-                        📅 Meet
+                      <button 
+                        onClick={() => handleReportDoctor(enroll)}
+                        className="bg-red-500 hover:bg-red-400 text-white px-3 py-1 rounded-lg text-xs transition-all duration-300"
+                        title="Report inappropriate behavior"
+                      >
+                        🚨 Report
                       </button>
                     </div>
                   </div>
@@ -159,7 +219,36 @@ const PatientDashboard = () => {
             </div>
           )}
         </div>
+
+        {/* Meeting Calendar Section */}
+        <UnifiedMeetingCalendar 
+          userRole="patient"
+          onMeetingClick={handleMeetingClick}
+        />
       </div>
+
+      {/* Report Modal */}
+      {reportingDoctor && (
+        <ReportUserModal
+          isOpen={reportModalOpen}
+          onClose={() => {
+            setReportModalOpen(false)
+            setReportingDoctor(null)
+          }}
+          reportedUser={reportingDoctor}
+          onReportSubmitted={handleReportSubmitted}
+        />
+      )}
+
+      {/* Meeting Detail Modal */}
+      {selectedMeeting && (
+        <MeetingDetailModal
+          meeting={selectedMeeting}
+          userRole="patient"
+          isOpen={showMeetingModal}
+          onClose={handleMeetingModalClose}
+        />
+      )}
     </div>
   )
 }

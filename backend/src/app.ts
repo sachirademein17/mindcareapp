@@ -12,6 +12,8 @@ import adminRoutes from './routes/admin'
 import doctorRoutes from './routes/doctorRoutes'
 import patientRoutes from './routes/patientRoutes'
 import chatRoutes from './routes/chatRoutes'
+import warningRoutes from './routes/warningRoutes'
+import { meetingRoutes } from './routes/meeting.routes'
 
 // DB Config
 import connectPostgres from './config/postgres.config'
@@ -19,7 +21,6 @@ import { initializeAllModels } from './models/index'
 
 // Chat model
 import { ChatMessagePG } from './models/ChatMessagePG'
-import meetingRoutes from './routes/meetingRoutes'
 
 dotenv.config()
 
@@ -36,21 +37,40 @@ app.use(express.urlencoded({ extended: true }))
 
 // 🔌 REST API Routes
 app.use('/api/auth', authRoutes)
-app.use('/admin', adminRoutes)
+app.use('/api/admin', adminRoutes)
 app.use('/doctor', doctorRoutes)
 app.use('/patient', patientRoutes)
 app.use('/api/chat', chatRoutes)
-app.use('/meetings', meetingRoutes)
+app.use('/api/warnings', warningRoutes)
+app.use('/api/meetings', meetingRoutes)
 
+// 🏥 Simple health check for testing
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'healthy', 
+    timestamp: new Date().toISOString(),
+    message: 'Mental Health Platform API is running' 
+  })
+})
 
 // 📦 Connect PostgreSQL and initialize Sequelize models
 connectPostgres()
 initializeAllModels()
 
-// 🟢 MongoDB connection (REQUIRED for chat)
-mongoose.connect(process.env.MONGO_URI || '')
-  .then(() => console.log('✅ MongoDB connected'))
-  .catch((err: any) => console.log('❌ MongoDB error:', err))
+// 🟢 MongoDB connection (OPTIONAL for chat - fallback to PostgreSQL)
+const connectMongoDB = async () => {
+  try {
+    if (process.env.MONGO_URI) {
+      await mongoose.connect(process.env.MONGO_URI)
+      console.log('✅ MongoDB connected')
+    } else {
+      console.log('⚠️ MongoDB URI not provided, using PostgreSQL for chat')
+    }
+  } catch (err: any) {
+    console.log('⚠️ MongoDB connection failed, using PostgreSQL for chat:', err.message)
+  }
+}
+connectMongoDB()
 
 // 📡 Socket.io setup
 const io = new Server(server, {

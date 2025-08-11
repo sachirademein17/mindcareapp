@@ -17,12 +17,13 @@ const admin_1 = __importDefault(require("./routes/admin"));
 const doctorRoutes_1 = __importDefault(require("./routes/doctorRoutes"));
 const patientRoutes_1 = __importDefault(require("./routes/patientRoutes"));
 const chatRoutes_1 = __importDefault(require("./routes/chatRoutes"));
+const warningRoutes_1 = __importDefault(require("./routes/warningRoutes"));
+const meeting_routes_1 = require("./routes/meeting.routes");
 // DB Config
 const postgres_config_1 = __importDefault(require("./config/postgres.config"));
 const index_1 = require("./models/index");
 // Chat model
 const ChatMessagePG_1 = require("./models/ChatMessagePG");
-const meetingRoutes_1 = __importDefault(require("./routes/meetingRoutes"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 exports.app = app;
@@ -35,18 +36,39 @@ app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
 // 🔌 REST API Routes
 app.use('/api/auth', auth_routes_1.default);
-app.use('/admin', admin_1.default);
+app.use('/api/admin', admin_1.default);
 app.use('/doctor', doctorRoutes_1.default);
 app.use('/patient', patientRoutes_1.default);
 app.use('/api/chat', chatRoutes_1.default);
-app.use('/meetings', meetingRoutes_1.default);
+app.use('/api/warnings', warningRoutes_1.default);
+app.use('/api/meetings', meeting_routes_1.meetingRoutes);
+// 🏥 Simple health check for testing
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        message: 'Mental Health Platform API is running'
+    });
+});
 // 📦 Connect PostgreSQL and initialize Sequelize models
 (0, postgres_config_1.default)();
 (0, index_1.initializeAllModels)();
-// 🟢 MongoDB connection (REQUIRED for chat)
-mongoose_1.default.connect(process.env.MONGO_URI || '')
-    .then(() => console.log('✅ MongoDB connected'))
-    .catch((err) => console.log('❌ MongoDB error:', err));
+// 🟢 MongoDB connection (OPTIONAL for chat - fallback to PostgreSQL)
+const connectMongoDB = async () => {
+    try {
+        if (process.env.MONGO_URI) {
+            await mongoose_1.default.connect(process.env.MONGO_URI);
+            console.log('✅ MongoDB connected');
+        }
+        else {
+            console.log('⚠️ MongoDB URI not provided, using PostgreSQL for chat');
+        }
+    }
+    catch (err) {
+        console.log('⚠️ MongoDB connection failed, using PostgreSQL for chat:', err.message);
+    }
+};
+connectMongoDB();
 // 📡 Socket.io setup
 const io = new socket_io_1.Server(server, {
     cors: { origin: 'http://localhost:5173', methods: ['GET', 'POST'] }

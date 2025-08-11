@@ -1,6 +1,7 @@
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useState } from 'react'
 import axios from 'axios'
+import { createApiUrl } from '../config/api'
 
 export default function Login() {
   const { role } = useParams()
@@ -13,7 +14,7 @@ export default function Login() {
   const handleLogin = async () => {
     setIsLoading(true)
     try {
-      const res = await axios.post(`http://localhost:5000/api/auth/${role}/login`, { email, password })
+      const res = await axios.post(createApiUrl(`auth/${role}/login`), { email, password })
       localStorage.setItem('token', res.data.token)
       localStorage.setItem('userId', res.data.user.id.toString())
       localStorage.setItem('role', role || '')
