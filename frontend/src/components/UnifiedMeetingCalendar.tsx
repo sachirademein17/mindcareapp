@@ -293,3 +293,6 @@ const UnifiedMeetingCalendar = ({ userRole, onMeetingClick, compact = false }: U
 }
 
 export default UnifiedMeetingCalendar
+
+
+

@@ -2,6 +2,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useState } from 'react'
 import axios from 'axios'
 import { createApiUrl } from '../config/api'
+import SuspensionAlert from '../components/SuspensionAlert'
 
 export default function Login() {
   const { role } = useParams()
@@ -10,6 +11,14 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  
+  // Suspension alert state
+  const [showSuspensionAlert, setShowSuspensionAlert] = useState(false)
+  const [suspensionData, setSuspensionData] = useState({
+    reason: '',
+    date: '',
+    message: ''
+  })
 
   const handleLogin = async () => {
     setIsLoading(true)
@@ -19,11 +28,33 @@ export default function Login() {
       localStorage.setItem('userId', res.data.user.id.toString())
       localStorage.setItem('role', role || '')
       navigate(`/${role}/dashboard`)
-    } catch (err) {
-      setError('Invalid credentials or unapproved user')
+    } catch (err: any) {
+      if (err.response?.status === 403 && err.response?.data?.suspended) {
+        // Handle suspended user
+        setSuspensionData({
+          reason: err.response.data.suspensionReason || 'Account suspended',
+          date: err.response.data.suspensionDate || new Date().toISOString(),
+          message: err.response.data.message || 'Your account has been suspended'
+        })
+        setShowSuspensionAlert(true)
+        setError('')
+      } else {
+        setError(err.response?.data?.error || 'Invalid credentials or unapproved user')
+      }
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleCloseSuspensionAlert = () => {
+    setShowSuspensionAlert(false)
+  }
+
+  const handleLogout = () => {
+    setShowSuspensionAlert(false)
+    setEmail('')
+    setPassword('')
+    setError('')
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -154,6 +185,15 @@ export default function Login() {
           </div>
         </div>
       </div>
+
+      {/* Suspension Alert Modal */}
+      <SuspensionAlert
+        isOpen={showSuspensionAlert}
+        onClose={handleCloseSuspensionAlert}
+        suspensionReason={suspensionData.reason}
+        suspensionDate={suspensionData.date}
+        onLogout={handleLogout}
+      />
     </div>
   )
 }

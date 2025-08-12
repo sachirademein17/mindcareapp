@@ -59,6 +59,17 @@ export const patientLogin = async (req: Request, res: Response) => {
     const match = await bcrypt.compare(password, user.password)
     if (!match) return res.status(401).json({ error: 'Invalid credentials' })
 
+    // Check if user is suspended
+    if (user.isSuspended) {
+      return res.status(403).json({ 
+        error: 'Account suspended',
+        suspended: true,
+        suspensionReason: user.suspendReason || 'Your account has been suspended by administrator',
+        suspensionDate: user.suspendedAt || new Date(),
+        message: 'Your account has been suspended. Please contact support for more information.'
+      })
+    }
+
     const token = jwt.sign({ id: user.id, role: 'patient' }, JWT_SECRET, { expiresIn: '1d' })
     res.json({ token, user })
   } catch (err) {
@@ -180,6 +191,17 @@ export const doctorLogin = async (req: Request, res: Response) => {
 
     const match = await bcrypt.compare(password, user.password)
     if (!match) return res.status(401).json({ error: 'Invalid credentials' })
+
+    // Check if user is suspended
+    if (user.isSuspended) {
+      return res.status(403).json({ 
+        error: 'Account suspended',
+        suspended: true,
+        suspensionReason: user.suspendReason || 'Your account has been suspended by administrator',
+        suspensionDate: user.suspendedAt || new Date(),
+        message: 'Your account has been suspended. Please contact support for more information.'
+      })
+    }
 
     const token = jwt.sign({ id: user.id, role: 'doctor' }, JWT_SECRET, { expiresIn: '1d' })
     res.json({ token, user })
