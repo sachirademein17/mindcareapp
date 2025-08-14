@@ -11,8 +11,11 @@ interface FormData {
   phoneNumber: string
   gender: string
   dateOfBirth: string
+  location: string
+  languages: string[]
   emergencyContactName: string
   emergencyPhone: string
+  emergencyContactRelationship: string
 }
 
 const SignupPatient: React.FC = () => {
@@ -28,8 +31,11 @@ const SignupPatient: React.FC = () => {
     // age removed
     gender: '',
     dateOfBirth: '',
+    location: '',
+    languages: [],
     emergencyContactName: '',
-    emergencyPhone: ''
+    emergencyPhone: '',
+    emergencyContactRelationship: ''
   })
   const [error, setError] = useState<string>('')
   const [nicError, setNicError] = useState<string>('')
@@ -89,6 +95,15 @@ const SignupPatient: React.FC = () => {
     }
   }
 
+  const handleLanguageChange = (language: string, checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      languages: checked 
+        ? [...prev.languages, language]
+        : prev.languages.filter(lang => lang !== language)
+    }))
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -111,8 +126,11 @@ const SignupPatient: React.FC = () => {
         gender: formData.gender,
         dob: formData.dateOfBirth,
         phone: formData.phoneNumber,
+        location: formData.location,
+        languages: formData.languages.join(', '),
         emergencyContactName: formData.emergencyContactName,
-        emergencyPhone: formData.emergencyPhone
+        emergencyPhone: formData.emergencyPhone,
+        emergencyContactRelationship: formData.emergencyContactRelationship
       }
 
       console.log('Sending registration request:', requestData) // Debug log
@@ -323,6 +341,76 @@ const SignupPatient: React.FC = () => {
                       <option value="prefer-not-to-say" className="bg-purple-900">Prefer not to say</option>
                     </select>
                   </div>
+
+                  <div className="group">
+                    <label htmlFor="location" className="block text-sm font-medium text-purple-200 mb-2">
+                      📍 Location (District)
+                    </label>
+                    <select
+                      id="location"
+                      name="location"
+                      value={formData.location}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200 hover:bg-white/15"
+                    >
+                      <option value="" className="bg-purple-900">Select your district</option>
+                      <option value="Colombo" className="bg-purple-900">Colombo</option>
+                      <option value="Gampaha" className="bg-purple-900">Gampaha</option>
+                      <option value="Kalutara" className="bg-purple-900">Kalutara</option>
+                      <option value="Kandy" className="bg-purple-900">Kandy</option>
+                      <option value="Matale" className="bg-purple-900">Matale</option>
+                      <option value="Nuwara Eliya" className="bg-purple-900">Nuwara Eliya</option>
+                      <option value="Galle" className="bg-purple-900">Galle</option>
+                      <option value="Matara" className="bg-purple-900">Matara</option>
+                      <option value="Hambantota" className="bg-purple-900">Hambantota</option>
+                      <option value="Jaffna" className="bg-purple-900">Jaffna</option>
+                      <option value="Kilinochchi" className="bg-purple-900">Kilinochchi</option>
+                      <option value="Mannar" className="bg-purple-900">Mannar</option>
+                      <option value="Vavuniya" className="bg-purple-900">Vavuniya</option>
+                      <option value="Mullaitivu" className="bg-purple-900">Mullaitivu</option>
+                      <option value="Batticaloa" className="bg-purple-900">Batticaloa</option>
+                      <option value="Ampara" className="bg-purple-900">Ampara</option>
+                      <option value="Trincomalee" className="bg-purple-900">Trincomalee</option>
+                      <option value="Kurunegala" className="bg-purple-900">Kurunegala</option>
+                      <option value="Puttalam" className="bg-purple-900">Puttalam</option>
+                      <option value="Anuradhapura" className="bg-purple-900">Anuradhapura</option>
+                      <option value="Polonnaruwa" className="bg-purple-900">Polonnaruwa</option>
+                      <option value="Badulla" className="bg-purple-900">Badulla</option>
+                      <option value="Moneragala" className="bg-purple-900">Moneragala</option>
+                      <option value="Ratnapura" className="bg-purple-900">Ratnapura</option>
+                      <option value="Kegalle" className="bg-purple-900">Kegalle</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Languages Section */}
+                <div className="group mt-6">
+                  <label className="block text-sm font-medium text-purple-200 mb-4">
+                    🗣️ Languages You Speak
+                  </label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {['Sinhala', 'Tamil', 'English'].map((language) => (
+                      <div key={language} className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          id={`language-${language}`}
+                          checked={formData.languages.includes(language)}
+                          onChange={(e) => handleLanguageChange(language, e.target.checked)}
+                          className="w-4 h-4 text-purple-600 bg-white/10 border-white/20 rounded focus:ring-purple-400 focus:ring-2"
+                        />
+                        <label
+                          htmlFor={`language-${language}`}
+                          className="text-purple-200 cursor-pointer hover:text-white transition-colors"
+                        >
+                          {language}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-purple-300 mt-2">
+                    Select all languages you can communicate in
+                  </p>
                 </div>
 
                 {/* Password */}
@@ -372,7 +460,7 @@ const SignupPatient: React.FC = () => {
                   Emergency Contact Information
                 </h3>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="group">
                     <label htmlFor="emergencyContactName" className="block text-sm font-medium text-purple-200 mb-2">
                       👤 Contact Name
@@ -403,6 +491,34 @@ const SignupPatient: React.FC = () => {
                       className="w-full px-4 py-3 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-purple-300/60 focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200 hover:bg-white/15"
                       placeholder="+94 XX XXX XXXX"
                     />
+                  </div>
+
+                  <div className="group">
+                    <label htmlFor="emergencyContactRelationship" className="block text-sm font-medium text-purple-200 mb-2">
+                      👥 Relationship
+                    </label>
+                    <select
+                      id="emergencyContactRelationship"
+                      name="emergencyContactRelationship"
+                      value={formData.emergencyContactRelationship}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200 hover:bg-white/15"
+                    >
+                      <option value="" className="bg-purple-900">Select relationship</option>
+                      <option value="Parent" className="bg-purple-900">Parent</option>
+                      <option value="Guardian" className="bg-purple-900">Guardian</option>
+                      <option value="Spouse" className="bg-purple-900">Spouse</option>
+                      <option value="Sibling" className="bg-purple-900">Sibling</option>
+                      <option value="Child" className="bg-purple-900">Child</option>
+                      <option value="Uncle" className="bg-purple-900">Uncle</option>
+                      <option value="Aunt" className="bg-purple-900">Aunt</option>
+                      <option value="Cousin" className="bg-purple-900">Cousin</option>
+                      <option value="Grandparent" className="bg-purple-900">Grandparent</option>
+                      <option value="Friend" className="bg-purple-900">Friend</option>
+                      <option value="Other Relative" className="bg-purple-900">Other Relative</option>
+                      <option value="Other" className="bg-purple-900">Other</option>
+                    </select>
                   </div>
                 </div>
               </div>
