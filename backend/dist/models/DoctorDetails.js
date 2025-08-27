@@ -50,6 +50,11 @@ exports.DoctorDetails = postgres_config_1.sequelize.define('DoctorDetails', {
         type: sequelize_1.DataTypes.TEXT, // Changed to TEXT to store JSON string
         allowNull: true
     },
+    consultationFee: {
+        type: sequelize_1.DataTypes.DECIMAL(10, 2),
+        allowNull: true,
+        comment: 'USD consultation fee per hour'
+    },
     approved: {
         type: sequelize_1.DataTypes.BOOLEAN,
         defaultValue: false

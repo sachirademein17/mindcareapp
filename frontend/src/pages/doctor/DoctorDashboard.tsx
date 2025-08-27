@@ -137,7 +137,7 @@ const DoctorDashboard = () => {
             </div>
             
             {/* Quick Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
               <Link 
                 to="/doctor/chat" 
                 className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-400 hover:to-pink-500 text-white p-6 rounded-2xl shadow-xl transition-all duration-300"
@@ -150,14 +150,25 @@ const DoctorDashboard = () => {
               </Link>
 
               <Link 
-                to="/doctor/meetings" 
+                to="/doctor/availability" 
                 className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white p-6 rounded-2xl shadow-xl transition-all duration-300"
               >
                 <div className="flex items-center justify-center mb-3">
                   <span className="text-4xl">📅</span>
                 </div>
+                <h3 className="text-xl font-semibold text-center">Set Availability</h3>
+                <p className="text-emerald-100 text-center mt-2">Manage your schedule</p>
+              </Link>
+
+              <Link 
+                to="/doctor/meetings" 
+                className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white p-6 rounded-2xl shadow-xl transition-all duration-300"
+              >
+                <div className="flex items-center justify-center mb-3">
+                  <span className="text-4xl">📋</span>
+                </div>
                 <h3 className="text-xl font-semibold text-center">Meeting Requests</h3>
-                <p className="text-emerald-100 text-center mt-2">Approve and manage appointments</p>
+                <p className="text-blue-100 text-center mt-2">Approve and manage appointments</p>
               </Link>
 
               <Link 
@@ -173,7 +184,7 @@ const DoctorDashboard = () => {
 
               <Link 
                 to="/doctor/change-password" 
-                className="bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-400 hover:to-blue-500 text-white p-6 rounded-2xl shadow-xl transition-all duration-300"
+                className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white p-6 rounded-2xl shadow-xl transition-all duration-300"
               >
                 <div className="flex items-center justify-center mb-3">
                   <span className="text-4xl">🔐</span>

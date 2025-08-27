@@ -1,8 +1,5 @@
-import { useEffect, useState } from 'react'
-import FullCalendar from '@fullcalendar/react'
-import dayGridPlugin from '@fullcalendar/daygrid'
-import timeGridPlugin from '@fullcalendar/timegrid'
-import interactionPlugin from '@fullcalendar/interaction'
+// 📁 frontend/src/components/UnifiedMeetingCalendar.tsx
+import React, { useState, useEffect } from 'react'
 import axios from 'axios'
 
 interface Meeting {
@@ -30,269 +27,356 @@ interface Meeting {
     id: number
     name: string
     email: string
-    DoctorDetail?: {
-      specialization: string
-    }
   }
 }
 
-interface CalendarEvent {
-  id: string
-  title: string
-  start: string
-  end: string
-  backgroundColor: string
-  borderColor: string
-  textColor: string
-  extendedProps: {
-    meeting: Meeting
-    type: 'meeting'
-  }
+interface DoctorAvailability {
+  id: number
+  dayOfWeek: number
+  startTime: string
+  endTime: string
+  isActive: boolean
 }
 
 interface UnifiedMeetingCalendarProps {
-  userRole: 'patient' | 'doctor'
-  onMeetingClick?: (meeting: Meeting) => void
-  compact?: boolean
+  onMeetingSelect?: (meeting: Meeting) => void
+  onAvailabilityChange?: () => void
 }
 
-const UnifiedMeetingCalendar = ({ userRole, onMeetingClick, compact = false }: UnifiedMeetingCalendarProps) => {
+const UnifiedMeetingCalendar: React.FC<UnifiedMeetingCalendarProps> = ({
+  onMeetingSelect,
+  onAvailabilityChange
+}) => {
   const [meetings, setMeetings] = useState<Meeting[]>([])
+  const [availability, setAvailability] = useState<DoctorAvailability[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([])
+  const [activeTab, setActiveTab] = useState<'meetings' | 'availability'>('meetings')
+  const [showAvailabilityForm, setShowAvailabilityForm] = useState(false)
+  const [newAvailability, setNewAvailability] = useState({
+    dayOfWeek: 1,
+    startTime: '09:00',
+    endTime: '17:00'
+  })
+
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
   useEffect(() => {
     fetchMeetings()
-  }, [userRole])
-
-  useEffect(() => {
-    // Convert meetings to calendar events
-    const events = meetings.map(meeting => convertMeetingToEvent(meeting))
-    setCalendarEvents(events)
-  }, [meetings])
+    fetchAvailability()
+  }, [])
 
   const fetchMeetings = async () => {
     try {
-      setLoading(true)
-      setError('')
-      
-      const endpoint = userRole === 'patient' 
-        ? 'http://localhost:5000/api/meetings/patient'
-        : 'http://localhost:5000/api/meetings/doctor'
-
-      const response = await axios.get(endpoint, {
+      const response = await axios.get('http://localhost:5000/api/meetings/doctor', {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       })
-
-      const meetingsData = Array.isArray(response.data) 
-        ? response.data 
-        : response.data.meetings || []
-      
-      setMeetings(meetingsData)
-    } catch (error: any) {
+      setMeetings(response.data.meetings || [])
+    } catch (error) {
       console.error('Error fetching meetings:', error)
-      setError('Failed to fetch meetings')
-    } finally {
+    }
+  }
+
+  const fetchAvailability = async () => {
+    try {
+      const doctorId = JSON.parse(localStorage.getItem('user') || '{}').id
+      const response = await axios.get(`http://localhost:5000/api/meetings/availability/${doctorId}`)
+      setAvailability(response.data.availabilities || [])
+      setLoading(false)
+    } catch (error) {
+      console.error('Error fetching availability:', error)
       setLoading(false)
     }
   }
 
-  const convertMeetingToEvent = (meeting: Meeting): CalendarEvent => {
-    const startDate = new Date(meeting.scheduledAt)
-    const endDate = new Date(startDate.getTime() + (meeting.duration * 60000)) // duration in minutes
-
-    // Color scheme based on status
-    const getStatusColors = (status: string) => {
-      switch (status) {
-        case 'pending':
-          return { bg: '#FCD34D', border: '#F59E0B', text: '#92400E' } // Yellow
-        case 'approved':
-          return { bg: '#34D399', border: '#10B981', text: '#065F46' } // Green
-        case 'rejected':
-          return { bg: '#F87171', border: '#EF4444', text: '#991B1B' } // Red
-        case 'cancelled':
-          return { bg: '#9CA3AF', border: '#6B7280', text: '#374151' } // Gray
-        case 'completed':
-          return { bg: '#60A5FA', border: '#3B82F6', text: '#1E40AF' } // Blue
-        default:
-          return { bg: '#9CA3AF', border: '#6B7280', text: '#374151' } // Gray
-      }
-    }
-
-    const colors = getStatusColors(meeting.status)
-    
-    // Title based on user role
-    const getTitle = () => {
-      if (userRole === 'patient') {
-        return `Dr. ${meeting.Doctor?.name || 'Unknown'} - ${meeting.status}`
-      } else {
-        return `${meeting.Patient?.name || 'Unknown Patient'} - ${meeting.status}`
-      }
-    }
-
-    return {
-      id: meeting.id.toString(),
-      title: getTitle(),
-      start: startDate.toISOString(),
-      end: endDate.toISOString(),
-      backgroundColor: colors.bg,
-      borderColor: colors.border,
-      textColor: colors.text,
-      extendedProps: {
-        meeting,
-        type: 'meeting'
-      }
+  const handleSetAvailability = async () => {
+    try {
+      await axios.post('http://localhost:5000/api/meetings/availability', newAvailability, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      })
+      
+      setShowAvailabilityForm(false)
+      setNewAvailability({ dayOfWeek: 1, startTime: '09:00', endTime: '17:00' })
+      fetchAvailability()
+      onAvailabilityChange?.()
+      alert('✅ Availability set successfully!')
+    } catch (error: any) {
+      console.error('Error setting availability:', error)
+      alert(`❌ ${error.response?.data?.error || 'Failed to set availability'}`)
     }
   }
 
-  const handleEventClick = (clickInfo: any) => {
-    const meeting = clickInfo.event.extendedProps.meeting
-    if (onMeetingClick) {
-      onMeetingClick(meeting)
+  const handleDeleteAvailability = async (availabilityId: number) => {
+    if (!confirm('Are you sure you want to delete this availability?')) return
+
+    try {
+      await axios.delete(`http://localhost:5000/api/meetings/availability/${availabilityId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      })
+      
+      fetchAvailability()
+      onAvailabilityChange?.()
+      alert('✅ Availability deleted successfully!')
+    } catch (error: any) {
+      console.error('Error deleting availability:', error)
+      alert(`❌ ${error.response?.data?.error || 'Failed to delete availability'}`)
     }
   }
 
-  const getStatusIcon = (status: string) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return '⏳'
-      case 'approved': return '✅'
-      case 'rejected': return '❌'
-      case 'cancelled': return '🚫'
-      case 'completed': return '🏁'
-      default: return '❓'
+      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+      case 'approved': return 'bg-green-100 text-green-800 border-green-200'
+      case 'rejected': return 'bg-red-100 text-red-800 border-red-200'
+      case 'cancelled': return 'bg-gray-100 text-gray-800 border-gray-200'
+      case 'completed': return 'bg-blue-100 text-blue-800 border-blue-200'
+      default: return 'bg-gray-100 text-gray-800 border-gray-200'
     }
+  }
+
+  const formatDateTime = (dateTime: string) => {
+    const date = new Date(dateTime)
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
+  const formatTime = (time: string) => {
+    const [hour, minute] = time.split(':')
+    const hourNum = parseInt(hour)
+    const ampm = hourNum >= 12 ? 'PM' : 'AM'
+    const displayHour = hourNum === 0 ? 12 : hourNum > 12 ? hourNum - 12 : hourNum
+    return `${displayHour}:${minute} ${ampm}`
   }
 
   if (loading) {
     return (
       <div className="bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl p-8 border border-white/20">
-        <div className="text-center text-white">
-          <div className="text-4xl mb-4">📅</div>
-          <p>Loading calendar...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl p-8 border border-white/20">
-        <div className="text-center text-red-300">
-          <div className="text-4xl mb-4">❌</div>
-          <p>{error}</p>
-          <button 
-            onClick={fetchMeetings}
-            className="mt-4 bg-purple-500 hover:bg-purple-400 text-white px-4 py-2 rounded-lg transition-all duration-300"
-          >
-            Retry
-          </button>
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-white">Loading calendar...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl p-6 border border-white/20">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-white flex items-center">
-          📅 Meeting Calendar
-        </h2>
-        <button 
-          onClick={fetchMeetings}
-          className="bg-purple-500 hover:bg-purple-400 text-white px-4 py-2 rounded-lg transition-all duration-300 text-sm"
+    <div className="bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
+      {/* Tab Navigation */}
+      <div className="flex border-b border-white/20">
+        <button
+          onClick={() => setActiveTab('meetings')}
+          className={`flex-1 px-6 py-4 text-center font-medium transition-colors ${
+            activeTab === 'meetings'
+              ? 'text-white bg-white/20'
+              : 'text-gray-300 hover:text-white hover:bg-white/10'
+          }`}
         >
-          🔄 Refresh
+          📅 Meeting Requests ({meetings.filter(m => m.status === 'pending').length})
+        </button>
+        <button
+          onClick={() => setActiveTab('availability')}
+          className={`flex-1 px-6 py-4 text-center font-medium transition-colors ${
+            activeTab === 'availability'
+              ? 'text-white bg-white/20'
+              : 'text-gray-300 hover:text-white hover:bg-white/10'
+          }`}
+        >
+          ⏰ My Availability ({availability.length})
         </button>
       </div>
 
-      {meetings.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="text-6xl mb-4">📅</div>
-          <p className="text-gray-300 text-lg">No meetings scheduled</p>
-          <p className="text-gray-400 text-sm">
-            {userRole === 'patient' 
-              ? 'Schedule meetings with your doctors to see them here'
-              : 'Meeting requests from patients will appear here'
-            }
-          </p>
-        </div>
-      ) : (
-        <>
-          {/* Calendar */}
-          <div className="bg-white rounded-2xl p-4 mb-6">
-            <FullCalendar
-              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-              initialView={compact ? 'dayGridMonth' : 'dayGridMonth'}
-              headerToolbar={{
-                left: 'prev,next today',
-                center: 'title',
-                right: compact ? 'dayGridMonth' : 'dayGridMonth,timeGridWeek,timeGridDay'
-              }}
-              events={calendarEvents}
-              eventClick={handleEventClick}
-              height={compact ? 400 : 600}
-              eventDisplay="block"
-              eventClassNames="cursor-pointer hover:shadow-lg transition-shadow"
-              dayMaxEvents={compact ? 2 : 5}
-              moreLinkClick="popover"
-              nowIndicator={true}
-              slotMinTime="08:00:00"
-              slotMaxTime="20:00:00"
-              allDaySlot={false}
-            />
-          </div>
-
-          {/* Legend */}
-          <div className="bg-white/5 rounded-xl p-4">
-            <h3 className="text-white font-semibold mb-3">Status Legend:</h3>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-              {[
-                { status: 'pending', color: '#FCD34D', label: 'Pending' },
-                { status: 'approved', color: '#34D399', label: 'Approved' },
-                { status: 'rejected', color: '#F87171', label: 'Rejected' },
-                { status: 'cancelled', color: '#9CA3AF', label: 'Cancelled' },
-                { status: 'completed', color: '#60A5FA', label: 'Completed' }
-              ].map(({ status, color, label }) => (
-                <div key={status} className="flex items-center space-x-2">
-                  <div 
-                    className="w-4 h-4 rounded-full border-2"
-                    style={{ backgroundColor: color, borderColor: color }}
-                  ></div>
-                  <span className="text-white text-sm">
-                    {getStatusIcon(status)} {label}
-                  </span>
-                </div>
-              ))}
+      <div className="p-6">
+        {activeTab === 'meetings' ? (
+          // Meetings Tab
+          <div>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-white">📋 Meeting Requests</h3>
             </div>
-          </div>
 
-          {/* Quick Stats */}
-          <div className="mt-4 grid grid-cols-2 md:grid-cols-5 gap-4">
-            {[
-              { status: 'pending', label: 'Pending', icon: '⏳' },
-              { status: 'approved', label: 'Approved', icon: '✅' },
-              { status: 'rejected', label: 'Rejected', icon: '❌' },
-              { status: 'cancelled', label: 'Cancelled', icon: '🚫' },
-              { status: 'completed', label: 'Completed', icon: '🏁' }
-            ].map(({ status, label, icon }) => {
-              const count = meetings.filter(m => m.status === status).length
-              return (
-                <div key={status} className="bg-white/5 rounded-lg p-3 text-center">
-                  <div className="text-2xl mb-1">{icon}</div>
-                  <div className="text-white font-bold text-lg">{count}</div>
-                  <div className="text-gray-300 text-xs">{label}</div>
-                </div>
-              )
-            })}
+            {meetings.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-4xl mb-4">📅</div>
+                <h4 className="text-lg font-semibold text-white mb-2">No Meeting Requests</h4>
+                <p className="text-gray-300">Patients haven't requested any meetings yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-4 max-h-96 overflow-y-auto">
+                {meetings.map(meeting => (
+                  <div
+                    key={meeting.id}
+                    className="bg-white/10 rounded-xl p-4 border border-white/20 hover:bg-white/15 transition-colors cursor-pointer"
+                    onClick={() => onMeetingSelect?.(meeting)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h4 className="font-semibold text-white">
+                            {meeting.Patient?.name || `Patient #${meeting.patientId}`}
+                          </h4>
+                          <span className={`px-2 py-1 rounded-lg text-xs font-medium border ${getStatusColor(meeting.status)}`}>
+                            {meeting.status.charAt(0).toUpperCase() + meeting.status.slice(1)}
+                          </span>
+                        </div>
+                        <p className="text-gray-300 text-sm mb-1">
+                          📅 {formatDateTime(meeting.scheduledAt)}
+                        </p>
+                        <p className="text-gray-300 text-sm">
+                          ⏱️ Duration: {meeting.duration} hour(s)
+                        </p>
+                        {meeting.patientNotes && (
+                          <p className="text-gray-300 text-sm mt-2">
+                            💬 "{meeting.patientNotes}"
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        {meeting.status === 'pending' && (
+                          <div className="flex gap-2">
+                            <button className="px-3 py-1 bg-green-500 hover:bg-green-400 text-white rounded-lg text-sm transition-colors">
+                              ✓ Approve
+                            </button>
+                            <button className="px-3 py-1 bg-red-500 hover:bg-red-400 text-white rounded-lg text-sm transition-colors">
+                              ✗ Decline
+                            </button>
+                          </div>
+                        )}
+                        {meeting.status === 'approved' && meeting.meetingUrl && (
+                          <a
+                            href={meeting.meetingUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-1 bg-blue-500 hover:bg-blue-400 text-white rounded-lg text-sm transition-colors text-center"
+                          >
+                            🎥 Join Meeting
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        </>
-      )}
+        ) : (
+          // Availability Tab
+          <div>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-white">⏰ My Availability</h3>
+              <button
+                onClick={() => setShowAvailabilityForm(true)}
+                className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-400 hover:to-purple-500 transition-all duration-300 font-medium"
+              >
+                ➕ Add Availability
+              </button>
+            </div>
+
+            {availability.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-4xl mb-4">⏰</div>
+                <h4 className="text-lg font-semibold text-white mb-2">No Availability Set</h4>
+                <p className="text-gray-300">Set your availability so patients can book meetings with you.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {availability.map(avail => (
+                  <div
+                    key={avail.id}
+                    className="bg-white/10 rounded-xl p-4 border border-white/20"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-semibold text-white mb-1">
+                          {dayNames[avail.dayOfWeek]}
+                        </h4>
+                        <p className="text-gray-300 text-sm">
+                          {formatTime(avail.startTime)} - {formatTime(avail.endTime)}
+                        </p>
+                        <div className="flex items-center mt-2">
+                          <span className={`w-2 h-2 rounded-full mr-2 ${avail.isActive ? 'bg-green-400' : 'bg-red-400'}`}></span>
+                          <span className="text-xs text-gray-300">
+                            {avail.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteAvailability(avail.id)}
+                        className="text-red-400 hover:text-red-300 transition-colors"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Add Availability Form */}
+            {showAvailabilityForm && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-2xl p-6 max-w-md w-full">
+                  <h3 className="text-xl font-bold text-gray-800 mb-4">➕ Add Availability</h3>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Day of Week</label>
+                      <select
+                        value={newAvailability.dayOfWeek}
+                        onChange={(e) => setNewAvailability(prev => ({ ...prev, dayOfWeek: parseInt(e.target.value) }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        {dayNames.map((day, index) => (
+                          <option key={index} value={index}>{day}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Start Time</label>
+                      <input
+                        type="time"
+                        value={newAvailability.startTime}
+                        onChange={(e) => setNewAvailability(prev => ({ ...prev, startTime: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">End Time</label>
+                      <input
+                        type="time"
+                        value={newAvailability.endTime}
+                        onChange={(e) => setNewAvailability(prev => ({ ...prev, endTime: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 mt-6">
+                    <button
+                      onClick={() => setShowAvailabilityForm(false)}
+                      className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSetAvailability}
+                      className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-400 transition-colors"
+                    >
+                      Add Availability
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
 
 export default UnifiedMeetingCalendar
-
-
-

@@ -11,14 +11,14 @@ import AdminWarnings from './components/AdminWarnings'
 import DoctorDashboard from './pages/doctor/DoctorDashboard'
 import DoctorChat from './pages/doctor/DoctorChat'
 import DoctorProfile from './pages/doctor/DoctorProfile'
+import DoctorMeetings from './pages/doctor/DoctorMeetings'
 import PatientDashboard from './pages/patient/PatientDashboard'
 import PatientChat from './pages/patient/PatientChat'
+import PatientMeetings from './pages/patient/PatientMeetings'
 import FindDoctors from './pages/patient/FindDoctors'
 import PatientProfile from './pages/patient/PatientProfile'
 import ChangePassword from './components/ChangePassword'
 import DesignShowcase from './pages/DesignShowcase'
-import MeetingCalendar from './components/MeetingCalendar'
-import DoctorMeetingDashboard from './components/DoctorMeetingDashboard'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
@@ -34,15 +34,15 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <Route path="/admin/warnings" element={<AdminWarnings />} />
         <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
         <Route path="/doctor/dashboard-full" element={<DoctorDashboard />} />
+        <Route path="/doctor/meetings" element={<DoctorMeetings />} />
         <Route path="/doctor/chat" element={<DoctorChat />} />
         <Route path="/doctor/profile" element={<DoctorProfile />} />
-        <Route path="/doctor/meetings" element={<DoctorMeetingDashboard />} />
         <Route path="/doctor/change-password" element={<ChangePassword />} />
         <Route path="/patient/dashboard" element={<PatientDashboard />} />
+        <Route path="/patient/meetings" element={<PatientMeetings />} />
         <Route path="/patient/chat" element={<PatientChat />} />
         <Route path="/patient/find-doctors" element={<FindDoctors />} />
         <Route path="/patient/profile" element={<PatientProfile />} />
-        <Route path="/patient/meetings" element={<MeetingCalendar />} />
         <Route path="/patient/change-password" element={<ChangePassword />} />
         <Route path="/design-showcase" element={<DesignShowcase />} />
         {/* Later: Add more dashboard routes */}

@@ -13,7 +13,7 @@ import doctorRoutes from './routes/doctorRoutes'
 import patientRoutes from './routes/patientRoutes'
 import chatRoutes from './routes/chatRoutes'
 import warningRoutes from './routes/warningRoutes'
-import { meetingRoutes } from './routes/meeting.routes'
+import meetingRoutes from './routes/meetingRoutes'
 
 // DB Config
 import connectPostgres from './config/postgres.config'

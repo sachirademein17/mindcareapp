@@ -1,256 +1,290 @@
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import axios from 'axios'
-import ReportUserModal from '../../components/ReportUserModal'
-import UnifiedMeetingCalendar from '../../components/UnifiedMeetingCalendar'
-import MeetingDetailModal from '../../components/MeetingDetailModal'
+import React, { useState, useEffect } from 'react';
+import { Calendar as CalendarIcon, Clock, MessageSquare, User, Heart, FileText, Video, Star, Search, Stethoscope, Lock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../../config/api';
 
-interface Meeting {
-  id: number
-  patientId: number
-  doctorId: number
-  enrollmentId: number
-  scheduledAt: string
-  status: 'pending' | 'approved' | 'rejected' | 'cancelled' | 'completed'
-  patientNotes?: string
-  doctorNotes?: string
-  rejectionReason?: string
-  meetingUrl?: string
-  duration: number
-  requestedAt: string
-  approvedAt?: string
-  cancelledAt?: string
-  completedAt?: string
-  Patient?: {
-    id: number
-    name: string
-    email: string
-  }
-  Doctor?: {
-    id: number
-    name: string
-    email: string
-    DoctorDetail?: {
-      specialization: string
-    }
-  }
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
 }
 
-const PatientDashboard = () => {
-  const [doctors, setDoctors] = useState<any[]>([])
-  const [reportModalOpen, setReportModalOpen] = useState(false)
-  const [reportingDoctor, setReportingDoctor] = useState<{ id: number; name: string; role: 'doctor' } | null>(null)
-  const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null)
-  const [showMeetingModal, setShowMeetingModal] = useState(false)
+interface Notification {
+  id: number;
+  title: string;
+  message: string;
+  type: string;
+  createdAt: string;
+}
+
+const PatientDashboard: React.FC = () => {
+  const navigate = useNavigate();
+  const [user, setUser] = useState<User | null>(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalMeetings: 0,
+    upcomingMeetings: 0,
+    completedMeetings: 0,
+    unreadNotifications: 0
+  });
 
   useEffect(() => {
-    fetchApprovedEnrollments()
-  }, [])
+    fetchUserInfo();
+    fetchNotifications();
+    fetchStats();
+  }, []);
 
-  const fetchApprovedEnrollments = () => {
-    axios.get('http://localhost:5000/patient/enrollments', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-    }).then(res => {
-      // Handle direct array response
-      const enrollments = Array.isArray(res.data) ? res.data : []
-      setDoctors(enrollments)
-    })
-      .catch(err => {
-        console.error('Error fetching doctors:', err)
-        setDoctors([])
-      })
-  }
+  const fetchUserInfo = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/login/patient');
+        return;
+      }
+      
+      // Decode token to get user info (simple approach)
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      setUser({
+        id: payload.id,
+        name: payload.name || 'Patient',
+        email: payload.email || '',
+        role: payload.role
+      });
+    } catch (error) {
+      console.error('Error fetching user info:', error);
+      navigate('/login/patient');
+    }
+  };
 
-  const handleReportDoctor = (doctor: any) => {
-    setReportingDoctor({
-      id: doctor.Doctor?.id || doctor.doctorId,
-      name: doctor.Doctor?.name || 'Unknown Doctor',
-      role: 'doctor'
-    })
-    setReportModalOpen(true)
-  }
+  const fetchNotifications = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/notifications`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
 
-  const handleReportSubmitted = () => {
-    setReportModalOpen(false)
-    setReportingDoctor(null)
-  }
+      if (response.ok) {
+        const data = await response.json();
+        setNotifications(data);
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
 
-  const handleMeetingClick = (meeting: Meeting) => {
-    setSelectedMeeting(meeting)
-    setShowMeetingModal(true)
-  }
+  const fetchStats = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/meetings/patient/stats`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
 
-  const handleMeetingModalClose = () => {
-    setShowMeetingModal(false)
-    setSelectedMeeting(null)
+      if (response.ok) {
+        const data = await response.json();
+        setStats(data);
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const quickActions = [
+    {
+      title: 'Find Doctors',
+      description: 'Search and connect with mental health professionals',
+      icon: Search,
+      action: () => navigate('/patient/find-doctors'),
+      color: 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500'
+    },
+    {
+      title: 'Book Appointment',
+      description: 'Schedule a new meeting with your doctor',
+      icon: CalendarIcon,
+      action: () => navigate('/patient/meetings'),
+      color: 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500'
+    },
+    {
+      title: 'My Meetings',
+      description: 'View and manage your appointments',
+      icon: Video,
+      action: () => navigate('/patient/meetings'),
+      color: 'bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-400 hover:to-cyan-500'
+    },
+    {
+      title: 'Chat with Doctor',
+      description: 'Start a conversation with your doctor',
+      icon: MessageSquare,
+      action: () => navigate('/patient/chat'),
+      color: 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500'
+    },
+    {
+      title: 'My Profile',
+      description: 'Update your personal information',
+      icon: User,
+      action: () => navigate('/patient/profile'),
+      color: 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500'
+    },
+    {
+      title: 'Change Password',
+      description: 'Update your account security',
+      icon: Lock,
+      action: () => navigate('/patient/change-password'),
+      color: 'bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-400 hover:to-pink-500'
+    }
+  ];
+
+  const StatCard = ({ title, value, icon: Icon, color }: any) => (
+    <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl shadow-xl border border-white/20 hover:bg-white/15 transition-all duration-300" style={{ borderLeftColor: color }}>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-emerald-200">{title}</p>
+          <p className="text-3xl font-bold text-white">{value}</p>
+        </div>
+        <Icon className="h-8 w-8 text-emerald-400" />
+      </div>
+    </div>
+  );
+
+  const QuickActionCard = ({ title, description, icon: Icon, action, color }: any) => (
+    <button
+      onClick={action}
+      className={`${color} text-white p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 text-left w-full transform hover:scale-105`}
+    >
+      <div className="flex items-center space-x-4">
+        <Icon className="h-8 w-8" />
+        <div>
+          <h3 className="text-lg font-semibold">{title}</h3>
+          <p className="text-sm opacity-90">{description}</p>
+        </div>
+      </div>
+    </button>
+  );
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900 relative overflow-hidden font-inter">
-      {/* Subtle Background Elements */}
+    <div className="min-h-screen bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-900 relative overflow-hidden font-inter">
+      {/* Background Elements */}
       <div className="absolute inset-0">
-        <div className="absolute top-20 left-10 w-32 h-32 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-10"></div>
-        <div className="absolute top-40 right-20 w-40 h-40 bg-pink-400 rounded-full mix-blend-multiply filter blur-xl opacity-10"></div>
-        <div className="absolute bottom-20 left-20 w-36 h-36 bg-indigo-400 rounded-full mix-blend-multiply filter blur-xl opacity-10"></div>
-        <div className="absolute bottom-40 right-10 w-28 h-28 bg-violet-400 rounded-full mix-blend-multiply filter blur-xl opacity-10"></div>
+        <div className="absolute top-20 left-10 w-32 h-32 bg-emerald-500 rounded-full mix-blend-multiply filter blur-xl opacity-10"></div>
+        <div className="absolute top-40 right-20 w-40 h-40 bg-teal-400 rounded-full mix-blend-multiply filter blur-xl opacity-10"></div>
+        <div className="absolute bottom-20 left-20 w-36 h-36 bg-cyan-400 rounded-full mix-blend-multiply filter blur-xl opacity-10"></div>
+        <div className="absolute bottom-40 right-10 w-28 h-28 bg-green-400 rounded-full mix-blend-multiply filter blur-xl opacity-10"></div>
       </div>
 
-      {/* Floating Medical Icons */}
-      <div className="absolute inset-0 pointer-events-none">
-        {/* Removed floating emojis for cleaner design */}
-      </div>
-
-      <div className="relative z-10 p-8 max-w-7xl mx-auto">
-        {/* Header Section */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl md:text-5xl font-extrabold font-poppins gradient-text mb-4 hover:scale-105 transform transition-all duration-300">
-            Patient Dashboard
-          </h1>
-          <p className="text-purple-200 text-lg">
-            Your journey to mental wellness starts here
-          </p>
+      {/* Header */}
+      <div className="relative z-10 bg-white/10 backdrop-blur-md shadow-2xl border-b border-white/20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div>
+              <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-600 mb-4">
+                Welcome back, {user?.name}!
+              </h1>
+              <p className="text-emerald-200 text-lg">
+                Your health journey continues - we're here to support you every step of the way.
+              </p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <button className="p-3 rounded-xl bg-white/10 hover:bg-white/20 transition-colors backdrop-blur-sm border border-white/20">
+                <MessageSquare className="h-6 w-6 text-emerald-300" />
+              </button>
+            </div>
+          </div>
         </div>
-        
+      </div>
+
+      {/* Main Content */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Stats Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <StatCard
+            title="Total Meetings"
+            value={stats.totalMeetings}
+            icon={CalendarIcon}
+            color="#10b981"
+          />
+          <StatCard
+            title="Upcoming"
+            value={stats.upcomingMeetings}
+            icon={Clock}
+            color="#06b6d4"
+          />
+          <StatCard
+            title="Completed"
+            value={stats.completedMeetings}
+            icon={Star}
+            color="#0891b2"
+          />
+          <StatCard
+            title="Notifications"
+            value={stats.unreadNotifications}
+            icon={MessageSquare}
+            color="#059669"
+          />
+        </div>
+
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8 animate-fade-in-up">
-          <Link 
-            to="/patient/find-doctors" 
-            className="group bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 text-white p-6 rounded-2xl shadow-xl transform transition-all duration-300 hover:scale-105 hover:shadow-2xl"
-          >
-            <div className="flex items-center justify-center mb-3">
-              <span className="text-4xl group-hover:animate-bounce">🔍</span>
-            </div>
-            <h3 className="text-xl font-semibold text-center">Find New Doctors</h3>
-            <p className="text-blue-100 text-center mt-2">Discover qualified mental health professionals</p>
-          </Link>
-
-          <Link 
-            to="/patient/chat" 
-            className="group bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-400 hover:to-pink-500 text-white p-6 rounded-2xl shadow-xl transform transition-all duration-300 hover:scale-105 hover:shadow-2xl"
-          >
-            <div className="flex items-center justify-center mb-3">
-              <span className="text-4xl group-hover:animate-bounce">💬</span>
-            </div>
-            <h3 className="text-xl font-semibold text-center">Chat with Doctors</h3>
-            <p className="text-purple-100 text-center mt-2">Connect and communicate securely</p>
-          </Link>
-
-          <Link 
-            to="/patient/meetings" 
-            className="group bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white p-6 rounded-2xl shadow-xl transform transition-all duration-300 hover:scale-105 hover:shadow-2xl"
-          >
-            <div className="flex items-center justify-center mb-3">
-              <span className="text-4xl group-hover:animate-bounce">📅</span>
-            </div>
-            <h3 className="text-xl font-semibold text-center">Schedule Meetings</h3>
-            <p className="text-emerald-100 text-center mt-2">Book and manage appointments</p>
-          </Link>
-
-          <Link 
-            to="/patient/profile" 
-            className="group bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-400 hover:to-red-500 text-white p-6 rounded-2xl shadow-xl transform transition-all duration-300 hover:scale-105 hover:shadow-2xl"
-          >
-            <div className="flex items-center justify-center mb-3">
-              <span className="text-4xl group-hover:animate-bounce">👤</span>
-            </div>
-            <h3 className="text-xl font-semibold text-center">Edit Profile</h3>
-            <p className="text-orange-100 text-center mt-2">Update your personal information</p>
-          </Link>
-
-          <Link 
-            to="/patient/change-password" 
-            className="group bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-400 hover:to-blue-500 text-white p-6 rounded-2xl shadow-xl transform transition-all duration-300 hover:scale-105 hover:shadow-2xl"
-          >
-            <div className="flex items-center justify-center mb-3">
-              <span className="text-4xl group-hover:animate-bounce">🔐</span>
-            </div>
-            <h3 className="text-xl font-semibold text-center">Change Password</h3>
-            <p className="text-indigo-100 text-center mt-2">Update your account security</p>
-          </Link>
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400 mb-6">Quick Actions</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {quickActions.map((action, index) => (
+              <QuickActionCard key={index} {...action} />
+            ))}
+          </div>
         </div>
 
-        {/* Current Doctors Section */}
-        <div className="bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl p-8 border border-white/20 animate-slide-in-left mb-8">
+        {/* Recent Activity */}
+        <div className="bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl p-8 border border-white/20">
           <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
-            👨‍⚕️ My Current Doctors
+            📊 Recent Activity
           </h2>
-          
-          {doctors.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">🩺</div>
-              <p className="text-gray-300 text-lg">No enrolled doctors yet.</p>
-              <p className="text-gray-400 text-sm">Your approved enrollments will appear here.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {doctors.map((enroll: any, index: number) => (
-                <div 
-                  key={enroll.id} 
-                  className="bg-gradient-to-r from-emerald-500/20 to-teal-500/20 p-6 rounded-2xl border border-emerald-400/30 backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:shadow-xl animate-fade-in-up"
-                  style={{animationDelay: `${index * 100}ms`}}
-                >
-                  <div className="flex items-center mb-4">
-                    <span className="text-3xl mr-4">👨‍⚕️</span>
-                    <div>
-                      <h3 className="text-white font-semibold text-lg">{enroll.Doctor?.name || 'N/A'}</h3>
-                      <p className="text-emerald-300 text-sm">📧 {enroll.Doctor?.email || 'N/A'}</p>
-                    </div>
+          {notifications.length > 0 ? (
+            <div className="space-y-4">
+              {notifications.slice(0, 5).map((notification) => (
+                <div key={notification.id} className="flex items-start space-x-3 p-4 bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors">
+                  <div className="flex-shrink-0">
+                    {notification.type === 'meeting' && <CalendarIcon className="h-5 w-5 text-emerald-400" />}
+                    {notification.type === 'message' && <MessageSquare className="h-5 w-5 text-cyan-400" />}
+                    {notification.type === 'health' && <Heart className="h-5 w-5 text-teal-400" />}
+                    {notification.type === 'system' && <FileText className="h-5 w-5 text-emerald-300" />}
                   </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <span className="bg-emerald-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                      ✅ Active
-                    </span>
-                    <div className="flex space-x-2">
-                      <button className="bg-purple-500 hover:bg-purple-400 text-white px-3 py-1 rounded-lg text-xs transition-all duration-300">
-                        💬 Chat
-                      </button>
-                      <button 
-                        onClick={() => handleReportDoctor(enroll)}
-                        className="bg-red-500 hover:bg-red-400 text-white px-3 py-1 rounded-lg text-xs transition-all duration-300"
-                        title="Report inappropriate behavior"
-                      >
-                        🚨 Report
-                      </button>
-                    </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-white">{notification.title}</p>
+                    <p className="text-sm text-emerald-200">{notification.message}</p>
+                    <p className="text-xs text-emerald-300 mt-1">
+                      {new Date(notification.createdAt).toLocaleDateString()}
+                    </p>
                   </div>
                 </div>
               ))}
             </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">🌟</div>
+              <p className="text-emerald-200 text-lg">No recent activity to display.</p>
+              <p className="text-emerald-300 text-sm">Your health journey activities will appear here.</p>
+            </div>
           )}
         </div>
-
-        {/* Meeting Calendar Section */}
-        <UnifiedMeetingCalendar 
-          userRole="patient"
-          onMeetingClick={handleMeetingClick}
-        />
       </div>
-
-      {/* Report Modal */}
-      {reportingDoctor && (
-        <ReportUserModal
-          isOpen={reportModalOpen}
-          onClose={() => {
-            setReportModalOpen(false)
-            setReportingDoctor(null)
-          }}
-          reportedUser={reportingDoctor}
-          onReportSubmitted={handleReportSubmitted}
-        />
-      )}
-
-      {/* Meeting Detail Modal */}
-      {selectedMeeting && (
-        <MeetingDetailModal
-          meeting={selectedMeeting}
-          userRole="patient"
-          isOpen={showMeetingModal}
-          onClose={handleMeetingModalClose}
-        />
-      )}
     </div>
-  )
-}
+  );
+};
 
-export default PatientDashboard
+export default PatientDashboard;

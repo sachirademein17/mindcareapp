@@ -18,7 +18,7 @@ const doctorRoutes_1 = __importDefault(require("./routes/doctorRoutes"));
 const patientRoutes_1 = __importDefault(require("./routes/patientRoutes"));
 const chatRoutes_1 = __importDefault(require("./routes/chatRoutes"));
 const warningRoutes_1 = __importDefault(require("./routes/warningRoutes"));
-const meeting_routes_1 = require("./routes/meeting.routes");
+const meetingRoutes_1 = __importDefault(require("./routes/meetingRoutes"));
 // DB Config
 const postgres_config_1 = __importDefault(require("./config/postgres.config"));
 const index_1 = require("./models/index");
@@ -41,7 +41,7 @@ app.use('/doctor', doctorRoutes_1.default);
 app.use('/patient', patientRoutes_1.default);
 app.use('/api/chat', chatRoutes_1.default);
 app.use('/api/warnings', warningRoutes_1.default);
-app.use('/api/meetings', meeting_routes_1.meetingRoutes);
+app.use('/api/meetings', meetingRoutes_1.default);
 // 🏥 Simple health check for testing
 app.get('/api/health', (req, res) => {
     res.json({

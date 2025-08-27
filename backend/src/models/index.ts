@@ -4,7 +4,10 @@ import { DoctorDetails } from './DoctorDetails'
 import { Enrollment } from './Enrollment'
 import { ChatMessagePG } from './ChatMessagePG'
 import { Warning } from './Warning'
-import { Meeting } from './Meeting'
+import DoctorAvailability from './DoctorAvailability'
+import Meeting from './Meeting'
+import Payment from './Payment'
+import Rating from './Rating'
 
 // Define relationships
 User.hasOne(DoctorDetails, { foreignKey: 'userId', as: 'DoctorDetail' })
@@ -14,14 +17,6 @@ User.hasMany(Enrollment, { foreignKey: 'patientId', as: 'PatientEnrollments' })
 User.hasMany(Enrollment, { foreignKey: 'doctorId', as: 'DoctorEnrollments' })
 Enrollment.belongsTo(User, { foreignKey: 'patientId', as: 'Patient' })
 Enrollment.belongsTo(User, { foreignKey: 'doctorId', as: 'Doctor' })
-
-// Meeting relationships
-Meeting.belongsTo(User, { foreignKey: 'patientId', as: 'Patient' })
-Meeting.belongsTo(User, { foreignKey: 'doctorId', as: 'Doctor' })
-Meeting.belongsTo(Enrollment, { foreignKey: 'enrollmentId', as: 'Enrollment' })
-User.hasMany(Meeting, { foreignKey: 'patientId', as: 'PatientMeetings' })
-User.hasMany(Meeting, { foreignKey: 'doctorId', as: 'DoctorMeetings' })
-Enrollment.hasMany(Meeting, { foreignKey: 'enrollmentId', as: 'Meetings' })
 
 // Chat message relationships
 ChatMessagePG.belongsTo(User, { foreignKey: 'senderId', as: 'sender' })
@@ -33,6 +28,29 @@ Warning.belongsTo(User, { foreignKey: 'reportedUserId', as: 'ReportedUser' })
 Warning.belongsTo(User, { foreignKey: 'adminId', as: 'Admin' })
 User.hasMany(ChatMessagePG, { foreignKey: 'senderId', as: 'sentMessages' })
 User.hasMany(ChatMessagePG, { foreignKey: 'receiverId', as: 'receivedMessages' })
+
+// Meeting system relationships
+User.hasMany(DoctorAvailability, { foreignKey: 'doctorId', as: 'Availabilities' })
+DoctorAvailability.belongsTo(User, { foreignKey: 'doctorId', as: 'Doctor' })
+
+User.hasMany(Meeting, { foreignKey: 'patientId', as: 'PatientMeetings' })
+User.hasMany(Meeting, { foreignKey: 'doctorId', as: 'DoctorMeetings' })
+Meeting.belongsTo(User, { foreignKey: 'patientId', as: 'Patient' })
+Meeting.belongsTo(User, { foreignKey: 'doctorId', as: 'Doctor' })
+Meeting.belongsTo(Enrollment, { foreignKey: 'enrollmentId', as: 'Enrollment' })
+Enrollment.hasMany(Meeting, { foreignKey: 'enrollmentId', as: 'Meetings' })
+
+Meeting.hasOne(Payment, { foreignKey: 'meetingId', as: 'Payment' })
+Payment.belongsTo(Meeting, { foreignKey: 'meetingId', as: 'Meeting' })
+Payment.belongsTo(User, { foreignKey: 'patientId', as: 'Patient' })
+Payment.belongsTo(User, { foreignKey: 'doctorId', as: 'Doctor' })
+
+Meeting.hasOne(Rating, { foreignKey: 'meetingId', as: 'Rating' })
+Rating.belongsTo(Meeting, { foreignKey: 'meetingId', as: 'Meeting' })
+Rating.belongsTo(User, { foreignKey: 'patientId', as: 'Patient' })
+Rating.belongsTo(User, { foreignKey: 'doctorId', as: 'Doctor' })
+User.hasMany(Rating, { foreignKey: 'doctorId', as: 'ReceivedRatings' })
+User.hasMany(Rating, { foreignKey: 'patientId', as: 'GivenRatings' })
 
 // Initialize all models
 export const initializeAllModels = async () => {
@@ -49,17 +67,25 @@ export const initializeAllModels = async () => {
     await Enrollment.sync({ alter: true })
     console.log('✅ Enrollment model synced')
     
-    await Meeting.sync({ alter: true })
-    console.log('✅ Meeting model synced')
-    
     await ChatMessagePG.sync({ alter: true })
     console.log('✅ ChatMessagePG model synced')
     
     await Warning.sync({ alter: true })
     console.log('✅ Warning model synced')
     
+    await DoctorAvailability.sync({ alter: true })
+    console.log('✅ DoctorAvailability model synced')
+    
+    await Meeting.sync({ alter: true })
+    console.log('✅ Meeting model synced')
+    
+    await Payment.sync({ alter: true })
+    console.log('✅ Payment model synced')
+    
+    await Rating.sync({ alter: true })
+    console.log('✅ Rating model synced')
+    
     console.log('✅ All models initialized successfully')
-    console.log('📝 Note: ChatMessage now uses PostgreSQL with proper foreign keys')
   } catch (error) {
     console.error('❌ Error initializing models:', error)
   }
@@ -71,5 +97,8 @@ export {
   Enrollment,
   ChatMessagePG,
   Warning,
-  Meeting
+  DoctorAvailability,
+  Meeting,
+  Payment,
+  Rating
 }

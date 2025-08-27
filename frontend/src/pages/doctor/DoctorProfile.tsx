@@ -13,6 +13,7 @@ interface DoctorData {
   qualifications: string;
   gender: string;
   languages: string[];
+  consultationFee: string;
 }
 
 const DoctorProfile: React.FC = () => {
@@ -30,7 +31,8 @@ const DoctorProfile: React.FC = () => {
     district: '',
     qualifications: '',
     gender: '',
-    languages: []
+    languages: [],
+    consultationFee: ''
   });
 
   const specializations = [
@@ -86,8 +88,13 @@ const DoctorProfile: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
-      alert('Please fill in all required fields');
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone || !formData.consultationFee) {
+      alert('Please fill in all required fields including consultation fee');
+      return;
+    }
+
+    if (parseFloat(formData.consultationFee) <= 0) {
+      alert('Consultation fee must be greater than 0');
       return;
     }
 
@@ -283,6 +290,27 @@ const DoctorProfile: React.FC = () => {
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   min="0"
                 />
+              </div>
+
+              <div>
+                <label htmlFor="consultationFee" className="block text-sm font-medium text-gray-700 mb-2">
+                  Consultation Fee (USD) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="consultationFee"
+                  type="number"
+                  name="consultationFee"
+                  value={formData.consultationFee}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  placeholder="Enter your consultation fee in USD"
+                  min="1"
+                  step="0.01"
+                  required
+                />
+                <p className="text-sm text-gray-600 mt-1">
+                  💰 Set your hourly consultation fee in USD. This will be charged to patients for each session.
+                </p>
               </div>
 
               <div>

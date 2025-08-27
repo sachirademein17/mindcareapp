@@ -277,7 +277,8 @@ export const getProfile = async (req: Request, res: Response) => {
         district: doctorDetails?.district || '',
         qualifications: doctorDetails?.qualifications || '',
         gender: doctorDetails?.gender || '',
-        languages: doctorDetails?.languages ? JSON.parse(doctorDetails.languages) : []
+        languages: doctorDetails?.languages ? JSON.parse(doctorDetails.languages) : [],
+        consultationFee: doctorDetails?.consultationFee?.toString() || ''
       }
       
       console.log('Returning doctor profile:', JSON.stringify(doctorProfile, null, 2)) // Debug log
@@ -337,7 +338,8 @@ export const updateProfile = async (req: Request, res: Response) => {
         district,
         qualifications,
         gender,
-        languages
+        languages,
+        consultationFee
       } = req.body
 
       // Update User table
@@ -362,6 +364,7 @@ export const updateProfile = async (req: Request, res: Response) => {
       if (qualifications) doctorUpdateData.qualifications = qualifications
       if (gender) doctorUpdateData.gender = gender
       if (languages) doctorUpdateData.languages = JSON.stringify(languages)
+      if (consultationFee) doctorUpdateData.consultationFee = parseFloat(consultationFee)
 
       if (doctorDetails) {
         await doctorDetails.update(doctorUpdateData)

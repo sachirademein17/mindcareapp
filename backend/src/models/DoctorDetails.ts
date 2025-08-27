@@ -13,6 +13,7 @@ interface DoctorDetailsModel extends Model<InferAttributes<DoctorDetailsModel>, 
   gender?: string
   location?: string
   languages?: string // JSON string array
+  consultationFee?: number // USD consultation fee per hour
   approved: CreationOptional<boolean>
   cvPath?: string
   licensePath?: string
@@ -64,6 +65,11 @@ export const DoctorDetails = sequelize.define<DoctorDetailsModel>('DoctorDetails
   languages: {
     type: DataTypes.TEXT, // Changed to TEXT to store JSON string
     allowNull: true
+  },
+  consultationFee: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: true,
+    comment: 'USD consultation fee per hour'
   },
   approved: { 
     type: DataTypes.BOOLEAN, 

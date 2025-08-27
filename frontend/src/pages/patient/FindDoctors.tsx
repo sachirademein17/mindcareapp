@@ -1,13 +1,25 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import axios from 'axios'
+import TimeSlotPicker from '../../components/TimeSlotPicker'
+
+interface Enrollment {
+  id: number
+  doctorId: number
+  patientId: number
+  status: string
+}
 
 const FindDoctors = () => {
   const [location, setLocation] = useState('')
   const [language, setLanguage] = useState('')
   const [doctors, setDoctors] = useState([])
   const [enrollmentStatuses, setEnrollmentStatuses] = useState<{[key: string]: string}>({})
+  const [enrollmentDetails, setEnrollmentDetails] = useState<{[key: string]: Enrollment}>({})
   const [loading, setLoading] = useState(false)
+  const [showTimeSlotPicker, setShowTimeSlotPicker] = useState(false)
+  const [selectedDoctor, setSelectedDoctor] = useState<any>(null)
+  const [selectedEnrollment, setSelectedEnrollment] = useState<any>(null)
 
   const handleSearch = async () => {
     setLoading(true)
@@ -32,19 +44,26 @@ const FindDoctors = () => {
   }
 
   const checkEnrollmentStatuses = async (doctorsList: any[]) => {
+    console.log('🔍 Checking enrollment statuses for doctors:', doctorsList.map(d => ({id: d.id, name: d.name})))
     const statuses: {[key: string]: string} = {}
+    const details: {[key: string]: Enrollment} = {}
     for (const doctor of doctorsList) {
       try {
         const res = await axios.get(`http://localhost:5000/patient/enrollment-status/${doctor.id}`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         })
+        console.log(`📋 Doctor ${doctor.id} (${doctor.name}) enrollment status:`, res.data.status)
         statuses[doctor.id] = res.data.status
+        details[doctor.id] = res.data.enrollment
       } catch (error) {
+        console.log(`❌ Doctor ${doctor.id} (${doctor.name}) - no enrollment found`)
         // No enrollment exists, so status is null
         statuses[doctor.id] = 'none'
       }
     }
+    console.log('📊 Final enrollment statuses:', statuses)
     setEnrollmentStatuses(statuses)
+    setEnrollmentDetails(details)
   }
 
   const handleEnroll = async (doctorId: string) => {
@@ -75,6 +94,52 @@ const FindDoctors = () => {
         alert(`Failed to enroll: ${error.message}`)
       }
     }
+  }
+
+  const handleBookMeeting = (doctor: any) => {
+    // Get the enrollment for this doctor
+    const enrollment = enrollmentDetails[doctor.id]
+    if (!enrollment) {
+      alert('Enrollment not found. Please try again.')
+      return
+    }
+
+    setSelectedDoctor(doctor)
+    setSelectedEnrollment(enrollment)
+    setShowTimeSlotPicker(true)
+  }
+
+  const handleSlotSelected = async (slotId: number, dateTime: string) => {
+    try {
+      if (!selectedEnrollment) {
+        alert('Enrollment not found. Please try again.')
+        return
+      }
+
+      const response = await axios.post('http://localhost:5000/api/meetings/request', {
+        doctorId: selectedDoctor.id,
+        enrollmentId: selectedEnrollment.id,
+        slotId: slotId,
+        patientNotes: `Meeting requested for ${dateTime}`
+      }, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      })
+
+      alert('🎉 Meeting request sent successfully! The doctor will review and approve your request.')
+      setShowTimeSlotPicker(false)
+      setSelectedDoctor(null)
+      setSelectedEnrollment(null)
+    } catch (error: any) {
+      console.error('Error requesting meeting:', error)
+      const errorMessage = error.response?.data?.error || 'Failed to request meeting'
+      alert(`❌ ${errorMessage}`)
+    }
+  }
+
+  const handleCancelTimeSlotPicker = () => {
+    setShowTimeSlotPicker(false)
+    setSelectedDoctor(null)
+    setSelectedEnrollment(null)
   }
 
   return (
@@ -242,15 +307,25 @@ const FindDoctors = () => {
                       </div>
                     )}
                     
-                    <div className="flex justify-end">
+                    <div className="flex justify-end space-x-3">
                       {(() => {
                         const status = enrollmentStatuses[doc.id]
+                        console.log(`🎯 Rendering doctor ${doc.id} (${doc.name}) with status:`, status)
                         if (status === 'approved') {
                           return (
-                            <span className="bg-green-500 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center">
-                              <span className="mr-2">✅</span>
-                              Enrolled
-                            </span>
+                            <>
+                              <span className="bg-green-500 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center">
+                                <span className="mr-2">✅</span>
+                                Enrolled
+                              </span>
+                              <button 
+                                onClick={() => handleBookMeeting(doc)}
+                                className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white px-6 py-2 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center"
+                              >
+                                <span className="mr-2">📅</span>
+                                Book Meeting
+                              </button>
+                            </>
                           )
                         } else {
                           return (
@@ -272,6 +347,16 @@ const FindDoctors = () => {
           )}
         </div>
       </div>
+
+      {/* TimeSlot Picker Modal */}
+      {showTimeSlotPicker && selectedDoctor && selectedEnrollment && (
+        <TimeSlotPicker
+          doctorId={selectedDoctor.id}
+          enrollmentId={selectedEnrollment.id}
+          onSlotSelected={handleSlotSelected}
+          onCancel={handleCancelTimeSlotPicker}
+        />
+      )}
     </div>
   )
 }

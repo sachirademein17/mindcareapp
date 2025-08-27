@@ -251,3 +251,22 @@ export const cancelEnrollmentByDoctor = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to cancel enrollment' })
   }
 }
+
+export const getDoctorDetails = async (req: Request, res: Response) => {
+  try {
+    const { doctorId } = req.params
+
+    const doctor = await User.findByPk(doctorId, {
+      include: [{ model: DoctorDetails, as: 'DoctorDetail' }]
+    })
+
+    if (!doctor) {
+      return res.status(404).json({ error: 'Doctor not found' })
+    }
+
+    res.json(doctor)
+  } catch (error) {
+    console.error('Error fetching doctor details:', error)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+}
