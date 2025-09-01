@@ -1,4 +1,4 @@
-// Frontend chat API service functions
+﻿// Frontend chat API service functions
 const API_BASE_URL = 'http://localhost:5000/api';
 
 export const chatAPI = {
@@ -93,3 +93,4 @@ export const chatAPI = {
     }
   },
 };
+

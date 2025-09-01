@@ -8,6 +8,7 @@ import SignupPatient from './pages/SignupPatient'
 import SignupDoctor from './pages/SignupDoctor'
 import AdminDashboard from './pages/AdminDashboard'
 import AdminWarnings from './components/AdminWarnings'
+import DoctorAvailability from './pages/doctor/DoctorAvailability'
 import DoctorDashboard from './pages/doctor/DoctorDashboard'
 import DoctorChat from './pages/doctor/DoctorChat'
 import DoctorProfile from './pages/doctor/DoctorProfile'
@@ -35,6 +36,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
         <Route path="/doctor/dashboard-full" element={<DoctorDashboard />} />
         <Route path="/doctor/meetings" element={<DoctorMeetings />} />
+        <Route path="/doctor/availability" element={<DoctorAvailability />} />
         <Route path="/doctor/chat" element={<DoctorChat />} />
         <Route path="/doctor/profile" element={<DoctorProfile />} />
         <Route path="/doctor/change-password" element={<ChangePassword />} />

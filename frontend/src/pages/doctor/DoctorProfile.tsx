@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 
 interface DoctorData {
   firstName: string;
@@ -56,7 +56,7 @@ const DoctorProfile: React.FC = () => {
     setIsLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/auth/profile', {
+      const response = await fetch('http://localhost:5001/api/auth/profile', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -101,7 +101,7 @@ const DoctorProfile: React.FC = () => {
     setIsSaving(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/auth/profile', {
+      const response = await fetch('http://localhost:5001/api/auth/profile', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -387,3 +387,4 @@ const DoctorProfile: React.FC = () => {
 };
 
 export default DoctorProfile;
+

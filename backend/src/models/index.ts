@@ -6,8 +6,9 @@ import { ChatMessagePG } from './ChatMessagePG'
 import { Warning } from './Warning'
 import DoctorAvailability from './DoctorAvailability'
 import Meeting from './Meeting'
-import Payment from './Payment'
 import Rating from './Rating'
+import Payment from './Payment'
+import Notification from './Notification'
 
 // Define relationships
 User.hasOne(DoctorDetails, { foreignKey: 'userId', as: 'DoctorDetail' })
@@ -40,17 +41,28 @@ Meeting.belongsTo(User, { foreignKey: 'doctorId', as: 'Doctor' })
 Meeting.belongsTo(Enrollment, { foreignKey: 'enrollmentId', as: 'Enrollment' })
 Enrollment.hasMany(Meeting, { foreignKey: 'enrollmentId', as: 'Meetings' })
 
-Meeting.hasOne(Payment, { foreignKey: 'meetingId', as: 'Payment' })
-Payment.belongsTo(Meeting, { foreignKey: 'meetingId', as: 'Meeting' })
-Payment.belongsTo(User, { foreignKey: 'patientId', as: 'Patient' })
-Payment.belongsTo(User, { foreignKey: 'doctorId', as: 'Doctor' })
-
 Meeting.hasOne(Rating, { foreignKey: 'meetingId', as: 'Rating' })
 Rating.belongsTo(Meeting, { foreignKey: 'meetingId', as: 'Meeting' })
 Rating.belongsTo(User, { foreignKey: 'patientId', as: 'Patient' })
 Rating.belongsTo(User, { foreignKey: 'doctorId', as: 'Doctor' })
 User.hasMany(Rating, { foreignKey: 'doctorId', as: 'ReceivedRatings' })
 User.hasMany(Rating, { foreignKey: 'patientId', as: 'GivenRatings' })
+
+// Payment system relationships
+User.hasMany(Payment, { foreignKey: 'patientId', as: 'PatientPayments' })
+User.hasMany(Payment, { foreignKey: 'doctorId', as: 'DoctorPayments' })
+Payment.belongsTo(User, { foreignKey: 'patientId', as: 'Patient' })
+Payment.belongsTo(User, { foreignKey: 'doctorId', as: 'Doctor' })
+Payment.belongsTo(Meeting, { foreignKey: 'meetingId', as: 'Meeting' })
+Meeting.hasOne(Payment, { foreignKey: 'meetingId', as: 'Payment' })
+
+// Notification system relationships
+User.hasMany(Notification, { foreignKey: 'userId', as: 'Notifications' })
+Notification.belongsTo(User, { foreignKey: 'userId', as: 'User' })
+Notification.belongsTo(Meeting, { foreignKey: 'meetingId', as: 'Meeting' })
+Notification.belongsTo(Payment, { foreignKey: 'paymentId', as: 'Payment' })
+Meeting.hasMany(Notification, { foreignKey: 'meetingId', as: 'Notifications' })
+Payment.hasMany(Notification, { foreignKey: 'paymentId', as: 'Notifications' })
 
 // Initialize all models
 export const initializeAllModels = async () => {
@@ -79,11 +91,14 @@ export const initializeAllModels = async () => {
     await Meeting.sync({ alter: true })
     console.log('✅ Meeting model synced')
     
+    await Rating.sync({ alter: true })
+    console.log('✅ Rating model synced')
+    
     await Payment.sync({ alter: true })
     console.log('✅ Payment model synced')
     
-    await Rating.sync({ alter: true })
-    console.log('✅ Rating model synced')
+    await Notification.sync({ alter: true })
+    console.log('✅ Notification model synced')
     
     console.log('✅ All models initialized successfully')
   } catch (error) {
@@ -99,6 +114,7 @@ export {
   Warning,
   DoctorAvailability,
   Meeting,
+  Rating,
   Payment,
-  Rating
+  Notification
 }

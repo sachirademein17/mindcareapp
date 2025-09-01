@@ -1,6 +1,8 @@
 // 📁 frontend/src/components/TimeSlotPicker.tsx
 import React, { useState, useEffect } from 'react'
 import axios from 'axios'
+import { useNavigate } from 'react-router-dom'
+import PaymentModal from './PaymentModal'
 
 interface TimeSlotPickerProps {
   doctorId: number
@@ -31,13 +33,20 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({
   onSlotSelected,
   onCancel
 }) => {
+  const navigate = useNavigate()
   const [availability, setAvailability] = useState<DoctorAvailability[]>([])
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([])
   const [selectedDate, setSelectedDate] = useState<string>('')
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null)
   const [loading, setLoading] = useState(true)
+  const [booking, setBooking] = useState(false)
   const [patientNotes, setPatientNotes] = useState('')
   const [consultationFee, setConsultationFee] = useState<number>(0)
+  const [doctorInfo, setDoctorInfo] = useState<any>(null)
+  
+  // Payment modal state
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [pendingMeetingId, setPendingMeetingId] = useState<number | null>(null)
 
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
@@ -68,11 +77,20 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({
       const response = await axios.get(`http://localhost:5000/patient/doctor/${doctorId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       })
+      
+      console.log('💰 Doctor details response:', response.data)
+      console.log('💰 Consultation fee:', response.data.DoctorDetail?.consultationFee)
+      
+      setDoctorInfo(response.data) // Store doctor info
+      
       if (response.data.DoctorDetail?.consultationFee) {
         setConsultationFee(response.data.DoctorDetail.consultationFee)
+        console.log('💰 Set consultation fee to:', response.data.DoctorDetail.consultationFee)
+      } else {
+        console.log('⚠️  No consultation fee found in doctor details')
       }
     } catch (error) {
-      console.error('Error fetching doctor details:', error)
+      console.error('❌ Error fetching doctor details:', error)
     }
   }
 
@@ -88,9 +106,9 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({
       return
     }
 
-    const slots: TimeSlot[] = []
+    const slotsMap = new Map<string, TimeSlot>() // Use Map to avoid duplicates
     
-    dayAvailability.forEach(avail => {
+    dayAvailability.forEach((avail) => {
       const startHour = parseInt(avail.startTime.split(':')[0])
       const endHour = parseInt(avail.endTime.split(':')[0])
       
@@ -102,17 +120,23 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({
         
         // Only show future time slots
         if (dateTime > new Date()) {
-          slots.push({
-            id: `${selectedDate}-${timeString}`,
-            date: selectedDate,
-            time: timeString,
-            datetime: datetime,
-            available: true // TODO: Check against existing bookings
-          })
+          const slotId = `${selectedDate}-${timeString}`
+          
+          // Only add if not already exists (avoid duplicates)
+          if (!slotsMap.has(slotId)) {
+            slotsMap.set(slotId, {
+              id: slotId,
+              date: selectedDate,
+              time: timeString,
+              datetime: datetime,
+              available: true // TODO: Check against existing bookings
+            })
+          }
         }
       }
     })
     
+    const slots = Array.from(slotsMap.values())
     setTimeSlots(slots.sort((a, b) => a.time.localeCompare(b.time)))
   }
 
@@ -145,7 +169,11 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({
       return
     }
 
+    setBooking(true)
+
     try {
+      console.log('🎯 Booking meeting with consultation fee:', consultationFee)
+      
       const [date, time] = selectedSlot.datetime.split('T')
       const startTime = time.split(':').slice(0, 2).join(':') // HH:MM format
 
@@ -159,20 +187,52 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       })
 
-      // If we get a client secret, redirect to payment
-      if (response.data.clientSecret) {
-        alert('Meeting booked! Redirecting to payment...')
-        // TODO: Integrate with Stripe payment flow
-        // For now, we'll just call the onSlotSelected callback
-        onSlotSelected(response.data.meeting.id, selectedSlot.datetime)
+      console.log('📋 Booking response:', response.data)
+
+      const meetingData = response.data.meeting || response.data
+      
+      console.log('📋 Meeting data:', meetingData)
+      console.log('💰 Consultation fee:', consultationFee)
+      
+      // Check if payment is required
+      if (consultationFee > 0) {
+        // Set pending meeting and show payment modal
+        setPendingMeetingId(meetingData.id)
+        setShowPaymentModal(true)
+        setBooking(false)
       } else {
-        onSlotSelected(response.data.meeting.id, selectedSlot.datetime)
+        // Free consultation - booking complete
+        alert('✅ Meeting booked successfully!')
+        onSlotSelected(meetingData.id, selectedSlot.datetime)
+        setBooking(false)
       }
     } catch (error: any) {
-      console.error('Error booking meeting:', error)
+      console.error('❌ Error booking meeting:', error)
       const errorMessage = error.response?.data?.error || 'Failed to book meeting'
       alert(`❌ ${errorMessage}`)
+      setBooking(false)
     }
+  }
+
+  const handlePaymentSuccess = (paymentId: number) => {
+    setShowPaymentModal(false)
+    setPendingMeetingId(null)
+    alert('✅ Payment successful! Your meeting request has been sent to the doctor.')
+    if (selectedSlot) {
+      onSlotSelected(paymentId, selectedSlot.datetime)
+    }
+  }
+
+  const handlePaymentCancel = () => {
+    setShowPaymentModal(false)
+    setPendingMeetingId(null)
+    // Optionally, you could cancel/delete the meeting here
+  }
+
+  const handlePaymentError = (error: string) => {
+    setShowPaymentModal(false)
+    setPendingMeetingId(null)
+    alert(`❌ Payment failed: ${error}`)
   }
 
   const formatTime = (time: string) => {
@@ -209,33 +269,33 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-6 text-white">
-          <div className="flex justify-between items-center">
-            <div>
-              <h2 className="text-2xl font-bold">📅 Book Meeting</h2>
-              <p className="text-blue-100">Select your preferred time slot</p>
-              {consultationFee > 0 && (
-                <p className="text-blue-100 mt-1">💰 Consultation Fee: ${consultationFee}/hour</p>
-              )}
-            </div>
-            <button 
-              onClick={onCancel}
-              className="text-white hover:text-gray-200 text-2xl transition-colors"
-            >
-              ✕
-            </button>
-          </div>
+      {/* Header */}
+      <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-6 text-white">
+        <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold">📅 Book Meeting</h2>
+          <p className="text-blue-100">Select your preferred time slot</p>
+          {consultationFee > 0 && (
+          <p className="text-blue-100 mt-1">💰 Consultation Fee: ${consultationFee}/hour</p>
+          )}
         </div>
+        <button 
+          onClick={onCancel}
+          className="text-white hover:text-gray-200 text-2xl transition-colors"
+        >
+          ✕
+        </button>
+        </div>
+      </div>
 
-        <div className="p-6 max-h-[calc(90vh-120px)] overflow-y-auto">
-          {availability.length === 0 ? (
-            <div className="text-center py-8">
-              <div className="text-4xl mb-4">📅</div>
-              <h3 className="text-lg font-semibold text-gray-700 mb-2">No Availability Set</h3>
-              <p className="text-gray-500">This doctor hasn't set their availability yet.</p>
-            </div>
-          ) : (
+      <div className="p-6 max-h-[calc(90vh-120px)] overflow-y-auto">
+        {availability.length === 0 ? (
+        <div className="text-center py-8">
+          <div className="text-4xl mb-4">📅</div>
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">No Availability Set</h3>
+          <p className="text-gray-500">This doctor hasn't set their availability yet.</p>
+        </div>
+        ) : (
             <>
               {/* Doctor's Schedule Info */}
               <div className="mb-6 p-4 bg-blue-50 rounded-xl">
@@ -329,16 +389,39 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({
                 </button>
                 <button
                   onClick={handleBookMeeting}
-                  disabled={!selectedSlot}
+                  disabled={!selectedSlot || booking}
                   className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-400 hover:to-purple-500 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition-all duration-200 font-medium"
                 >
-                  📅 Book Meeting
+                  {booking ? (
+                    <div className="flex items-center justify-center">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                      Booking...
+                    </div>
+                  ) : consultationFee > 0 ? (
+                    '💳 Book & Pay'
+                  ) : (
+                    '📅 Book Meeting'
+                  )}
                 </button>
               </div>
             </>
           )}
         </div>
       </div>
+
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        meetingId={pendingMeetingId || 0}
+        meetingDetails={{
+          doctorName: doctorInfo?.name || 'Doctor',
+          date: selectedSlot?.date || '',
+          time: selectedSlot?.time || '',
+          amount: consultationFee
+        }}
+        onPaymentSuccess={handlePaymentSuccess}
+      />
     </div>
   )
 }

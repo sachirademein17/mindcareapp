@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 
 const ChangePassword: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -37,7 +37,7 @@ const ChangePassword: React.FC = () => {
     setIsLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/auth/change-password', {
+      const response = await fetch('http://localhost:5001/api/auth/change-password', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -163,3 +163,4 @@ const ChangePassword: React.FC = () => {
 };
 
 export default ChangePassword;
+

@@ -1,4 +1,4 @@
-
+﻿
 import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { createApiUrl } from '../config/api'
@@ -480,7 +480,7 @@ const AdminDashboard = () => {
                           {selectedDoctor.DoctorDetail.cvPath ? (
                             <div className="mt-2">
                               <a
-                                href={`http://localhost:5000/uploads/${selectedDoctor.DoctorDetail.cvPath}`}
+                                href={`http://localhost:5001/uploads/${selectedDoctor.DoctorDetail.cvPath}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center bg-blue-500 hover:bg-blue-400 text-white px-4 py-2 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 text-sm"
@@ -497,7 +497,7 @@ const AdminDashboard = () => {
                           {selectedDoctor.DoctorDetail.licensePath ? (
                             <div className="mt-2">
                               <a
-                                href={`http://localhost:5000/uploads/${selectedDoctor.DoctorDetail.licensePath}`}
+                                href={`http://localhost:5001/uploads/${selectedDoctor.DoctorDetail.licensePath}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center bg-green-500 hover:bg-green-400 text-white px-4 py-2 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 text-sm"
@@ -549,3 +549,4 @@ const AdminDashboard = () => {
 }
 
 export default AdminDashboard
+

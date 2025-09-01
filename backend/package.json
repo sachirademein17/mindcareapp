@@ -13,6 +13,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@types/stripe": "^8.0.416",
     "@types/uuid": "^10.0.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
@@ -27,7 +28,7 @@
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
     "sqlite3": "^5.1.7",
-    "stripe": "^18.4.0",
+    "stripe": "^18.5.0",
     "uuid": "^11.1.0"
   },
   "devDependencies": {

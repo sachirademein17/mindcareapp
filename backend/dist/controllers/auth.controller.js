@@ -283,7 +283,8 @@ const getProfile = async (req, res) => {
                 district: doctorDetails?.district || '',
                 qualifications: doctorDetails?.qualifications || '',
                 gender: doctorDetails?.gender || '',
-                languages: doctorDetails?.languages ? JSON.parse(doctorDetails.languages) : []
+                languages: doctorDetails?.languages ? JSON.parse(doctorDetails.languages) : [],
+                consultationFee: doctorDetails?.consultationFee?.toString() || ''
             };
             console.log('Returning doctor profile:', JSON.stringify(doctorProfile, null, 2)); // Debug log
             return res.json(doctorProfile);
@@ -328,7 +329,7 @@ const updateProfile = async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         }
         if (user.role === 'doctor') {
-            const { firstName, lastName, email, phone, nicNumber, specialization, licenseNumber, experience, district, qualifications, gender, languages } = req.body;
+            const { firstName, lastName, email, phone, nicNumber, specialization, licenseNumber, experience, district, qualifications, gender, languages, consultationFee } = req.body;
             // Update User table
             const userUpdateData = {};
             if (firstName && lastName) {
@@ -358,6 +359,8 @@ const updateProfile = async (req, res) => {
                 doctorUpdateData.gender = gender;
             if (languages)
                 doctorUpdateData.languages = JSON.stringify(languages);
+            if (consultationFee)
+                doctorUpdateData.consultationFee = parseFloat(consultationFee);
             if (doctorDetails) {
                 await doctorDetails.update(doctorUpdateData);
             }

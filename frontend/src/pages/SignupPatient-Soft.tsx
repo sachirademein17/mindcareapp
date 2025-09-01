@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import axios from 'axios'
 import { useNavigate, Link } from 'react-router-dom'
 
@@ -27,7 +27,7 @@ export default function SignupPatientSoftMinimalist() {
         return
       }
       
-      await axios.post('http://localhost:5000/auth/patient/signup', form)
+      await axios.post('http://localhost:5001/auth/patient/signup', form)
       alert('Registration successful! Welcome to MindCare!')
       navigate('/login/patient')
     } catch (err: any) {
@@ -171,3 +171,4 @@ export default function SignupPatientSoftMinimalist() {
     </div>
   )
 }
+

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+﻿import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 interface FormData {
@@ -135,7 +135,7 @@ const SignupPatient: React.FC = () => {
 
       console.log('Sending registration request:', requestData) // Debug log
 
-      const response = await fetch('http://localhost:5000/api/auth/patient/signup', {
+      const response = await fetch('http://localhost:5001/api/auth/patient/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -553,3 +553,4 @@ const SignupPatient: React.FC = () => {
 }
 
 export default SignupPatient
+

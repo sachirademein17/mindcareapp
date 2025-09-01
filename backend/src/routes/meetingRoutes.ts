@@ -1,10 +1,10 @@
-// 📁 backend/src/routes/meetingRoutes.ts
 import express from 'express'
 import {
   setDoctorAvailability,
   getDoctorAvailability,
   updateDoctorAvailability,
   deleteDoctorAvailability,
+  getAvailableSlots,
   bookMeeting,
   approveMeeting,
   declineMeeting,
@@ -12,8 +12,8 @@ import {
   getPatientMeetings,
   completeMeeting,
   rateMeeting,
-  handleStripeWebhook,
-  getDoctorRatings
+  cancelMeeting,
+  getPatientStats
 } from '../controllers/meeting.controller'
 import { verifyToken, requireRole, checkSuspension } from '../middlewares/auth.middleware'
 
@@ -24,6 +24,7 @@ router.post('/availability', verifyToken, requireRole('doctor'), checkSuspension
 router.get('/availability/:doctorId', getDoctorAvailability)
 router.put('/availability/:availabilityId', verifyToken, requireRole('doctor'), checkSuspension, updateDoctorAvailability)
 router.delete('/availability/:availabilityId', verifyToken, requireRole('doctor'), checkSuspension, deleteDoctorAvailability)
+router.get('/available-slots', getAvailableSlots)
 
 // Meeting Booking Routes
 router.post('/book', verifyToken, requireRole('patient'), checkSuspension, bookMeeting)
@@ -36,14 +37,14 @@ router.put('/:meetingId/decline', verifyToken, requireRole('doctor'), checkSuspe
 router.get('/doctor', verifyToken, requireRole('doctor'), checkSuspension, getDoctorMeetings)
 router.get('/patient', verifyToken, requireRole('patient'), checkSuspension, getPatientMeetings)
 
+// Patient Stats Route
+router.get('/patient/stats', verifyToken, requireRole('patient'), checkSuspension, getPatientStats)
+
 // Meeting Completion and Rating
 router.put('/:meetingId/complete', verifyToken, checkSuspension, completeMeeting)
 router.post('/:meetingId/rate', verifyToken, requireRole('patient'), checkSuspension, rateMeeting)
 
-// Rating and Reviews
-router.get('/ratings/:doctorId', getDoctorRatings)
-
-// Stripe Webhook (no auth required, Stripe handles verification)
-router.post('/webhook/stripe', express.raw({ type: 'application/json' }), handleStripeWebhook)
+// Meeting Cancellation
+router.put('/:meetingId/cancel', verifyToken, checkSuspension, cancelMeeting)
 
 export default router

@@ -1,4 +1,4 @@
-// 📁 frontend/src/components/MeetingDetailModal.tsx
+﻿// 📁 frontend/src/components/MeetingDetailModal.tsx
 import React, { useState } from 'react'
 import axios from 'axios'
 
@@ -334,3 +334,4 @@ const MeetingDetailModal: React.FC<MeetingDetailModalProps> = ({
 }
 
 export default MeetingDetailModal
+

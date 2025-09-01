@@ -1,4 +1,4 @@
-// 📁 frontend/src/components/UnifiedMeetingCalendar.tsx
+﻿// 📁 frontend/src/components/UnifiedMeetingCalendar.tsx
 import React, { useState, useEffect } from 'react'
 import axios from 'axios'
 
@@ -67,7 +67,7 @@ const UnifiedMeetingCalendar: React.FC<UnifiedMeetingCalendarProps> = ({
 
   const fetchMeetings = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/meetings/doctor', {
+      const response = await axios.get('http://localhost:5001/api/meetings/doctor', {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       })
       setMeetings(response.data.meetings || [])
@@ -79,7 +79,7 @@ const UnifiedMeetingCalendar: React.FC<UnifiedMeetingCalendarProps> = ({
   const fetchAvailability = async () => {
     try {
       const doctorId = JSON.parse(localStorage.getItem('user') || '{}').id
-      const response = await axios.get(`http://localhost:5000/api/meetings/availability/${doctorId}`)
+      const response = await axios.get(`http://localhost:5001/api/meetings/availability/${doctorId}`)
       setAvailability(response.data.availabilities || [])
       setLoading(false)
     } catch (error) {
@@ -90,7 +90,7 @@ const UnifiedMeetingCalendar: React.FC<UnifiedMeetingCalendarProps> = ({
 
   const handleSetAvailability = async () => {
     try {
-      await axios.post('http://localhost:5000/api/meetings/availability', newAvailability, {
+      await axios.post('http://localhost:5001/api/meetings/availability', newAvailability, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       })
       
@@ -109,7 +109,7 @@ const UnifiedMeetingCalendar: React.FC<UnifiedMeetingCalendarProps> = ({
     if (!confirm('Are you sure you want to delete this availability?')) return
 
     try {
-      await axios.delete(`http://localhost:5000/api/meetings/availability/${availabilityId}`, {
+      await axios.delete(`http://localhost:5001/api/meetings/availability/${availabilityId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       })
       
@@ -380,3 +380,4 @@ const UnifiedMeetingCalendar: React.FC<UnifiedMeetingCalendarProps> = ({
 }
 
 export default UnifiedMeetingCalendar
+

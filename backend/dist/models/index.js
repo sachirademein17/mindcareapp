@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Rating = exports.Payment = exports.Meeting = exports.DoctorAvailability = exports.Warning = exports.ChatMessagePG = exports.Enrollment = exports.DoctorDetails = exports.User = exports.initializeAllModels = void 0;
+exports.Notification = exports.Payment = exports.Rating = exports.Meeting = exports.DoctorAvailability = exports.Warning = exports.ChatMessagePG = exports.Enrollment = exports.DoctorDetails = exports.User = exports.initializeAllModels = void 0;
 // 📁 backend/src/models/index.ts
 const User_1 = require("./User");
 Object.defineProperty(exports, "User", { enumerable: true, get: function () { return User_1.User; } });
@@ -19,10 +19,12 @@ const DoctorAvailability_1 = __importDefault(require("./DoctorAvailability"));
 exports.DoctorAvailability = DoctorAvailability_1.default;
 const Meeting_1 = __importDefault(require("./Meeting"));
 exports.Meeting = Meeting_1.default;
-const Payment_1 = __importDefault(require("./Payment"));
-exports.Payment = Payment_1.default;
 const Rating_1 = __importDefault(require("./Rating"));
 exports.Rating = Rating_1.default;
+const Payment_1 = __importDefault(require("./Payment"));
+exports.Payment = Payment_1.default;
+const Notification_1 = __importDefault(require("./Notification"));
+exports.Notification = Notification_1.default;
 // Define relationships
 User_1.User.hasOne(DoctorDetails_1.DoctorDetails, { foreignKey: 'userId', as: 'DoctorDetail' });
 DoctorDetails_1.DoctorDetails.belongsTo(User_1.User, { foreignKey: 'userId' });
@@ -48,16 +50,26 @@ Meeting_1.default.belongsTo(User_1.User, { foreignKey: 'patientId', as: 'Patient
 Meeting_1.default.belongsTo(User_1.User, { foreignKey: 'doctorId', as: 'Doctor' });
 Meeting_1.default.belongsTo(Enrollment_1.Enrollment, { foreignKey: 'enrollmentId', as: 'Enrollment' });
 Enrollment_1.Enrollment.hasMany(Meeting_1.default, { foreignKey: 'enrollmentId', as: 'Meetings' });
-Meeting_1.default.hasOne(Payment_1.default, { foreignKey: 'meetingId', as: 'Payment' });
-Payment_1.default.belongsTo(Meeting_1.default, { foreignKey: 'meetingId', as: 'Meeting' });
-Payment_1.default.belongsTo(User_1.User, { foreignKey: 'patientId', as: 'Patient' });
-Payment_1.default.belongsTo(User_1.User, { foreignKey: 'doctorId', as: 'Doctor' });
 Meeting_1.default.hasOne(Rating_1.default, { foreignKey: 'meetingId', as: 'Rating' });
 Rating_1.default.belongsTo(Meeting_1.default, { foreignKey: 'meetingId', as: 'Meeting' });
 Rating_1.default.belongsTo(User_1.User, { foreignKey: 'patientId', as: 'Patient' });
 Rating_1.default.belongsTo(User_1.User, { foreignKey: 'doctorId', as: 'Doctor' });
 User_1.User.hasMany(Rating_1.default, { foreignKey: 'doctorId', as: 'ReceivedRatings' });
 User_1.User.hasMany(Rating_1.default, { foreignKey: 'patientId', as: 'GivenRatings' });
+// Payment system relationships
+User_1.User.hasMany(Payment_1.default, { foreignKey: 'patientId', as: 'PatientPayments' });
+User_1.User.hasMany(Payment_1.default, { foreignKey: 'doctorId', as: 'DoctorPayments' });
+Payment_1.default.belongsTo(User_1.User, { foreignKey: 'patientId', as: 'Patient' });
+Payment_1.default.belongsTo(User_1.User, { foreignKey: 'doctorId', as: 'Doctor' });
+Payment_1.default.belongsTo(Meeting_1.default, { foreignKey: 'meetingId', as: 'Meeting' });
+Meeting_1.default.hasOne(Payment_1.default, { foreignKey: 'meetingId', as: 'Payment' });
+// Notification system relationships
+User_1.User.hasMany(Notification_1.default, { foreignKey: 'userId', as: 'Notifications' });
+Notification_1.default.belongsTo(User_1.User, { foreignKey: 'userId', as: 'User' });
+Notification_1.default.belongsTo(Meeting_1.default, { foreignKey: 'meetingId', as: 'Meeting' });
+Notification_1.default.belongsTo(Payment_1.default, { foreignKey: 'paymentId', as: 'Payment' });
+Meeting_1.default.hasMany(Notification_1.default, { foreignKey: 'meetingId', as: 'Notifications' });
+Payment_1.default.hasMany(Notification_1.default, { foreignKey: 'paymentId', as: 'Notifications' });
 // Initialize all models
 const initializeAllModels = async () => {
     try {
@@ -77,10 +89,12 @@ const initializeAllModels = async () => {
         console.log('✅ DoctorAvailability model synced');
         await Meeting_1.default.sync({ alter: true });
         console.log('✅ Meeting model synced');
-        await Payment_1.default.sync({ alter: true });
-        console.log('✅ Payment model synced');
         await Rating_1.default.sync({ alter: true });
         console.log('✅ Rating model synced');
+        await Payment_1.default.sync({ alter: true });
+        console.log('✅ Payment model synced');
+        await Notification_1.default.sync({ alter: true });
+        console.log('✅ Notification model synced');
         console.log('✅ All models initialized successfully');
     }
     catch (error) {

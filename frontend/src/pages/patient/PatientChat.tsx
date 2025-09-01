@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import axios from 'axios'
 import Chat from '../common/Chat'
@@ -13,7 +13,7 @@ const PatientChat = () => {
   }, [])
 
   const fetchApprovedDoctors = () => {
-    axios.get('http://localhost:5000/patient/enrollments', {
+    axios.get('http://localhost:5001/patient/enrollments', {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     }).then(res => {
       setDoctors(res.data)
@@ -169,3 +169,4 @@ const PatientChat = () => {
 }
 
 export default PatientChat
+

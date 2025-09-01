@@ -91,31 +91,32 @@ Meeting.init({
         allowNull: false,
         comment: 'Doctor consultation fee in USD',
     },
-    paymentStatus: {
-        type: sequelize_1.DataTypes.ENUM('pending', 'paid', 'refunded', 'withdrawn'),
-        allowNull: false,
-        defaultValue: 'pending',
-    },
-    paymentId: {
-        type: sequelize_1.DataTypes.STRING(255),
-        allowNull: true,
-        comment: 'Stripe payment ID',
-    },
-    paymentIntentId: {
-        type: sequelize_1.DataTypes.STRING(255),
-        allowNull: true,
-        comment: 'Stripe payment intent ID',
-    },
     canRefund: {
         type: sequelize_1.DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: true,
-        comment: 'Whether payment can still be refunded (within 1 day)',
+        comment: 'Whether cancellation is allowed (within 1 day)',
     },
-    refundDeadline: {
-        type: sequelize_1.DataTypes.DATE,
+    isPaid: {
+        type: sequelize_1.DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        comment: 'Whether patient has paid for this meeting',
+    },
+    paymentStatus: {
+        type: sequelize_1.DataTypes.ENUM('unpaid', 'pending', 'paid', 'refunded', 'failed'),
+        allowNull: false,
+        defaultValue: 'unpaid',
+    },
+    paymentId: {
+        type: sequelize_1.DataTypes.INTEGER,
         allowNull: true,
-        comment: '1 day after booking',
+        references: {
+            model: 'Payments',
+            key: 'id',
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL',
     },
     rating: {
         type: sequelize_1.DataTypes.INTEGER,

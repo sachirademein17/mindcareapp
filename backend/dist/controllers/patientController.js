@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cancelEnrollmentByDoctor = exports.getEnrollmentStatusByDoctor = exports.getEnrollmentStatus = exports.cancelEnrollment = exports.enrollDoctor = exports.filterDoctors = exports.getAllEnrollments = exports.getEnrolledDoctors = void 0;
+exports.getDoctorDetails = exports.cancelEnrollmentByDoctor = exports.getEnrollmentStatusByDoctor = exports.getEnrollmentStatus = exports.cancelEnrollment = exports.enrollDoctor = exports.filterDoctors = exports.getAllEnrollments = exports.getEnrolledDoctors = void 0;
 const User_1 = require("../models/User");
 const Enrollment_1 = require("../models/Enrollment");
 const DoctorDetails_1 = require("../models/DoctorDetails");
@@ -219,3 +219,20 @@ const cancelEnrollmentByDoctor = async (req, res) => {
     }
 };
 exports.cancelEnrollmentByDoctor = cancelEnrollmentByDoctor;
+const getDoctorDetails = async (req, res) => {
+    try {
+        const { doctorId } = req.params;
+        const doctor = await User_1.User.findByPk(doctorId, {
+            include: [{ model: DoctorDetails_1.DoctorDetails, as: 'DoctorDetail' }]
+        });
+        if (!doctor) {
+            return res.status(404).json({ error: 'Doctor not found' });
+        }
+        res.json(doctor);
+    }
+    catch (error) {
+        console.error('Error fetching doctor details:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+exports.getDoctorDetails = getDoctorDetails;

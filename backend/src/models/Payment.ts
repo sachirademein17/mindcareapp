@@ -1,5 +1,5 @@
 // 📁 backend/src/models/Payment.ts
-import { DataTypes, Model, Optional } from 'sequelize'
+import { DataTypes, Model, Optional, Op } from 'sequelize'
 import { sequelize } from '../config/postgres.config'
 
 export interface PaymentAttributes {
@@ -7,23 +7,36 @@ export interface PaymentAttributes {
   meetingId: number
   patientId: number
   doctorId: number
-  amount: number
-  currency: string
-  stripePaymentId?: string
-  stripePaymentIntentId: string
-  stripeClientSecret?: string
-  paymentMethod?: string // card, bank_transfer, etc.
-  status: 'pending' | 'processing' | 'succeeded' | 'failed' | 'cancelled' | 'refunded'
+  amount: number // Payment amount in USD
+  currency: string // USD
+  status: 'pending' | 'completed' | 'failed' | 'refunded' | 'cancelled'
+  paymentMethod: 'stripe' | 'paypal' | 'card'
+  
+  // Stripe Integration
+  stripePaymentIntentId?: string
+  stripeChargeId?: string
+  stripeRefundId?: string
+  stripeCustomerId?: string
+  
+  // Payment Details
+  paymentDate?: Date
+  refundDate?: Date
   refundAmount?: number
   refundReason?: string
-  refundedAt?: Date
-  paymentFailureReason?: string
-  metadata?: object // Additional payment data from Stripe
+  
+  // Processing Info
+  processingFee: number // Platform fee (e.g., 5% of amount)
+  doctorEarnings: number // Amount doctor receives after fees
+  
+  // Metadata
+  metadata?: string // JSON string for additional data
+  failureReason?: string
+  
   createdAt: Date
   updatedAt: Date
 }
 
-interface PaymentCreationAttributes extends Optional<PaymentAttributes, 'id' | 'createdAt' | 'updatedAt' | 'currency' | 'status'> {}
+interface PaymentCreationAttributes extends Optional<PaymentAttributes, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'currency' | 'processingFee' | 'doctorEarnings'> {}
 
 export class Payment extends Model<PaymentAttributes, PaymentCreationAttributes> implements PaymentAttributes {
   public id!: number
@@ -32,16 +45,25 @@ export class Payment extends Model<PaymentAttributes, PaymentCreationAttributes>
   public doctorId!: number
   public amount!: number
   public currency!: string
-  public stripePaymentId?: string
-  public stripePaymentIntentId!: string
-  public stripeClientSecret?: string
-  public paymentMethod?: string
-  public status!: 'pending' | 'processing' | 'succeeded' | 'failed' | 'cancelled' | 'refunded'
+  public status!: 'pending' | 'completed' | 'failed' | 'refunded' | 'cancelled'
+  public paymentMethod!: 'stripe' | 'paypal' | 'card'
+  
+  public stripePaymentIntentId?: string
+  public stripeChargeId?: string
+  public stripeRefundId?: string
+  public stripeCustomerId?: string
+  
+  public paymentDate?: Date
+  public refundDate?: Date
   public refundAmount?: number
   public refundReason?: string
-  public refundedAt?: Date
-  public paymentFailureReason?: string
-  public metadata?: object
+  
+  public processingFee!: number
+  public doctorEarnings!: number
+  
+  public metadata?: string
+  public failureReason?: string
+  
   public readonly createdAt!: Date
   public readonly updatedAt!: Date
 }
@@ -86,60 +108,82 @@ Payment.init(
     amount: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
-      comment: 'Payment amount in specified currency',
+      comment: 'Payment amount in USD',
+      validate: {
+        min: 0.01,
+      },
     },
     currency: {
       type: DataTypes.STRING(3),
       allowNull: false,
       defaultValue: 'USD',
-      comment: 'ISO currency code (USD, EUR, etc.)',
-    },
-    stripePaymentId: {
-      type: DataTypes.STRING(255),
-      allowNull: true,
-      comment: 'Stripe payment ID (pi_xxxxx)',
-    },
-    stripePaymentIntentId: {
-      type: DataTypes.STRING(255),
-      allowNull: false,
-      comment: 'Stripe payment intent ID',
-    },
-    stripeClientSecret: {
-      type: DataTypes.STRING(500),
-      allowNull: true,
-      comment: 'Stripe client secret for frontend processing',
-    },
-    paymentMethod: {
-      type: DataTypes.STRING(50),
-      allowNull: true,
-      comment: 'Payment method type (card, bank_transfer, etc.)',
     },
     status: {
-      type: DataTypes.ENUM('pending', 'processing', 'succeeded', 'failed', 'cancelled', 'refunded'),
+      type: DataTypes.ENUM('pending', 'completed', 'failed', 'refunded', 'cancelled'),
       allowNull: false,
       defaultValue: 'pending',
+    },
+    paymentMethod: {
+      type: DataTypes.ENUM('stripe', 'paypal', 'card'),
+      allowNull: false,
+      defaultValue: 'stripe',
+    },
+    stripePaymentIntentId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      unique: true,
+    },
+    stripeChargeId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    stripeRefundId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    stripeCustomerId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    paymentDate: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    refundDate: {
+      type: DataTypes.DATE,
+      allowNull: true,
     },
     refundAmount: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: true,
-      comment: 'Amount refunded (can be partial)',
+      validate: {
+        min: 0,
+      },
     },
     refundReason: {
       type: DataTypes.TEXT,
       allowNull: true,
     },
-    refundedAt: {
-      type: DataTypes.DATE,
-      allowNull: true,
+    processingFee: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+      defaultValue: 0,
+      comment: 'Platform processing fee',
     },
-    paymentFailureReason: {
-      type: DataTypes.TEXT,
-      allowNull: true,
+    doctorEarnings: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+      defaultValue: 0,
+      comment: 'Amount doctor receives after fees',
     },
     metadata: {
-      type: DataTypes.JSONB,
+      type: DataTypes.TEXT,
       allowNull: true,
-      comment: 'Additional payment data from Stripe',
+      comment: 'JSON string for additional payment data',
+    },
+    failureReason: {
+      type: DataTypes.TEXT,
+      allowNull: true,
     },
     createdAt: {
       type: DataTypes.DATE,
@@ -156,19 +200,6 @@ Payment.init(
     timestamps: true,
     indexes: [
       {
-        fields: ['stripePaymentId'],
-        unique: true,
-        where: {
-          stripePaymentId: {
-            [require('sequelize').Op.ne]: null
-          }
-        }
-      },
-      {
-        fields: ['stripePaymentIntentId'],
-        unique: true,
-      },
-      {
         fields: ['meetingId'],
       },
       {
@@ -179,6 +210,15 @@ Payment.init(
       },
       {
         fields: ['status'],
+      },
+      {
+        fields: ['stripePaymentIntentId'],
+        unique: true,
+        where: {
+          stripePaymentIntentId: {
+            [Op.ne]: null,
+          },
+        },
       },
     ],
   }

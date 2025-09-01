@@ -16,11 +16,13 @@ export interface MeetingAttributes {
   declineReason?: string
   meetingUrl?: string // Jitsi meeting URL
   consultationFee: number // Doctor's consultation fee for this meeting
-  paymentStatus: 'pending' | 'paid' | 'refunded' | 'withdrawn'
-  paymentId?: string // Stripe payment ID
-  paymentIntentId?: string // Stripe payment intent ID
-  canRefund: boolean // Whether payment can still be refunded (within 1 day)
-  refundDeadline?: Date // 1 day after booking
+  canRefund: boolean // Whether cancellation is allowed (within 1 day)
+  
+  // Payment Integration
+  isPaid: boolean // Whether patient has paid for this meeting
+  paymentStatus: 'unpaid' | 'pending' | 'paid' | 'refunded' | 'failed'
+  paymentId?: number // Reference to Payment record
+  
   rating?: number // Patient rating for doctor (1-5 stars)
   ratingComment?: string // Patient's rating comment
   requestedAt: Date
@@ -32,7 +34,7 @@ export interface MeetingAttributes {
   updatedAt: Date
 }
 
-interface MeetingCreationAttributes extends Optional<MeetingAttributes, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'paymentStatus' | 'canRefund' | 'requestedAt'> {}
+interface MeetingCreationAttributes extends Optional<MeetingAttributes, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'canRefund' | 'requestedAt' | 'isPaid' | 'paymentStatus'> {}
 
 export class Meeting extends Model<MeetingAttributes, MeetingCreationAttributes> implements MeetingAttributes {
   public id!: number
@@ -48,11 +50,13 @@ export class Meeting extends Model<MeetingAttributes, MeetingCreationAttributes>
   public declineReason?: string
   public meetingUrl?: string
   public consultationFee!: number
-  public paymentStatus!: 'pending' | 'paid' | 'refunded' | 'withdrawn'
-  public paymentId?: string
-  public paymentIntentId?: string
   public canRefund!: boolean
-  public refundDeadline?: Date
+  
+  // Payment Integration
+  public isPaid!: boolean
+  public paymentStatus!: 'unpaid' | 'pending' | 'paid' | 'refunded' | 'failed'
+  public paymentId?: number
+  
   public rating?: number
   public ratingComment?: string
   public requestedAt!: Date
@@ -149,31 +153,32 @@ Meeting.init(
       allowNull: false,
       comment: 'Doctor consultation fee in USD',
     },
-    paymentStatus: {
-      type: DataTypes.ENUM('pending', 'paid', 'refunded', 'withdrawn'),
-      allowNull: false,
-      defaultValue: 'pending',
-    },
-    paymentId: {
-      type: DataTypes.STRING(255),
-      allowNull: true,
-      comment: 'Stripe payment ID',
-    },
-    paymentIntentId: {
-      type: DataTypes.STRING(255),
-      allowNull: true,
-      comment: 'Stripe payment intent ID',
-    },
     canRefund: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: true,
-      comment: 'Whether payment can still be refunded (within 1 day)',
+      comment: 'Whether cancellation is allowed (within 1 day)',
     },
-    refundDeadline: {
-      type: DataTypes.DATE,
+    isPaid: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'Whether patient has paid for this meeting',
+    },
+    paymentStatus: {
+      type: DataTypes.ENUM('unpaid', 'pending', 'paid', 'refunded', 'failed'),
+      allowNull: false,
+      defaultValue: 'unpaid',
+    },
+    paymentId: {
+      type: DataTypes.INTEGER,
       allowNull: true,
-      comment: '1 day after booking',
+      references: {
+        model: 'Payments',
+        key: 'id',
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL',
     },
     rating: {
       type: DataTypes.INTEGER,

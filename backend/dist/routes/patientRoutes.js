@@ -9,6 +9,7 @@ const requirePatient = [auth_middleware_1.verifyToken, auth_middleware_1.checkSu
 router.get('/enrollments', requirePatient, patientController_1.getEnrolledDoctors);
 router.get('/all-enrollments', requirePatient, patientController_1.getAllEnrollments);
 router.get('/filter-doctors', requirePatient, patientController_1.filterDoctors);
+router.get('/doctor/:doctorId', requirePatient, patientController_1.getDoctorDetails);
 router.post('/enroll/:doctorId', requirePatient, patientController_1.enrollDoctor);
 router.delete('/enrollment/:enrollmentId', requirePatient, patientController_1.cancelEnrollment);
 router.delete('/cancel-enrollment/:doctorId', requirePatient, patientController_1.cancelEnrollmentByDoctor);

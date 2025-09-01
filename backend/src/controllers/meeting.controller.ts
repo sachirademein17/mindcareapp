@@ -1,8 +1,7 @@
 // 📁 backend/src/controllers/meeting.controller.ts
 import { Request, Response } from 'express'
 import { Op } from 'sequelize'
-import { DoctorAvailability, Meeting, Payment, Rating, User, DoctorDetails, Enrollment } from '../models'
-import Stripe from 'stripe'
+import { DoctorAvailability, Meeting, Rating, User, DoctorDetails, Enrollment } from '../models'
 
 // Define AuthRequest interface based on the existing auth middleware
 interface AuthRequest extends Request {
@@ -13,10 +12,6 @@ interface AuthRequest extends Request {
     [key: string]: any
   }
 }
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-07-30.basil',
-})
 
 // Doctor Availability Management
 export const setDoctorAvailability = async (req: AuthRequest, res: Response) => {
@@ -52,21 +47,21 @@ export const setDoctorAvailability = async (req: AuthRequest, res: Response) => 
   }
 }
 
-export const getDoctorAvailability = async (req: Request, res: Response) => {
+export const getDoctorAvailability = async (req: AuthRequest, res: Response) => {
   try {
     const { doctorId } = req.params
 
-    const availabilities = await DoctorAvailability.findAll({
-      where: { 
-        doctorId,
+    const availability = await DoctorAvailability.findAll({
+      where: {
+        doctorId: parseInt(doctorId),
         isActive: true
       },
       order: [['dayOfWeek', 'ASC'], ['startTime', 'ASC']]
     })
 
-    res.json({ availabilities })
+    res.json({ availabilities: availability })
   } catch (error) {
-    console.error('Error getting doctor availability:', error)
+    console.error('Error fetching doctor availability:', error)
     res.status(500).json({ error: 'Internal server error' })
   }
 }
@@ -78,23 +73,23 @@ export const updateDoctorAvailability = async (req: AuthRequest, res: Response) 
     const doctorId = parseInt(req.user?.id || '0')
 
     // Find the availability record
-    const availability = await DoctorAvailability.findByPk(availabilityId)
-    
+    const availability = await DoctorAvailability.findOne({
+      where: {
+        id: parseInt(availabilityId),
+        doctorId
+      }
+    })
+
     if (!availability) {
       return res.status(404).json({ error: 'Availability not found' })
     }
 
-    // Check if the availability belongs to the authenticated doctor
-    if (availability.doctorId !== doctorId) {
-      return res.status(403).json({ error: 'Unauthorized to modify this availability' })
-    }
-
     // Update the availability
     await availability.update({
-      dayOfWeek: dayOfWeek !== undefined ? dayOfWeek : availability.dayOfWeek,
-      startTime: startTime !== undefined ? startTime : availability.startTime,
-      endTime: endTime !== undefined ? endTime : availability.endTime,
-      isActive: isActive !== undefined ? isActive : availability.isActive
+      dayOfWeek,
+      startTime,
+      endTime,
+      isActive: isActive !== undefined ? isActive : true
     })
 
     res.json({
@@ -112,31 +107,83 @@ export const deleteDoctorAvailability = async (req: AuthRequest, res: Response) 
     const { availabilityId } = req.params
     const doctorId = parseInt(req.user?.id || '0')
 
-    // Find the availability record
-    const availability = await DoctorAvailability.findByPk(availabilityId)
-    
-    if (!availability) {
+    // Find and delete the availability record
+    const deleted = await DoctorAvailability.destroy({
+      where: {
+        id: parseInt(availabilityId),
+        doctorId
+      }
+    })
+
+    if (!deleted) {
       return res.status(404).json({ error: 'Availability not found' })
     }
 
-    // Check if the availability belongs to the authenticated doctor
-    if (availability.doctorId !== doctorId) {
-      return res.status(403).json({ error: 'Unauthorized to delete this availability' })
-    }
-
-    // Delete the availability
-    await availability.destroy()
-
-    res.json({
-      message: 'Availability deleted successfully'
-    })
+    res.json({ message: 'Availability deleted successfully' })
   } catch (error) {
     console.error('Error deleting doctor availability:', error)
     res.status(500).json({ error: 'Internal server error' })
   }
 }
 
-// Meeting Booking
+export const getAvailableSlots = async (req: AuthRequest, res: Response) => {
+  try {
+    const { doctorId, date } = req.query
+
+    if (!doctorId || !date) {
+      return res.status(400).json({ error: 'Doctor ID and date are required' })
+    }
+
+    const selectedDate = new Date(date as string)
+    const dayOfWeek = selectedDate.getDay()
+
+    // Get doctor's availability for this day
+    const availability = await DoctorAvailability.findAll({
+      where: {
+        doctorId: parseInt(doctorId as string),
+        dayOfWeek,
+        isActive: true
+      }
+    })
+
+    if (availability.length === 0) {
+      return res.json([])
+    }
+
+    // Get existing bookings for this day
+    const existingMeetings = await Meeting.findAll({
+      where: {
+        doctorId: parseInt(doctorId as string),
+        meetingDate: date as string,
+        status: { [Op.in]: ['pending', 'approved'] }
+      }
+    })
+
+    const bookedSlots = existingMeetings.map(meeting => meeting.startTime)
+
+    // Generate available slots
+    const availableSlots: string[] = []
+
+    availability.forEach(slot => {
+      const startHour = parseInt(slot.startTime.split(':')[0])
+      const endHour = parseInt(slot.endTime.split(':')[0])
+
+      for (let hour = startHour; hour < endHour; hour++) {
+        const timeSlot = `${String(hour).padStart(2, '0')}:00`
+        if (!bookedSlots.includes(timeSlot)) {
+          availableSlots.push(timeSlot)
+        }
+      }
+    })
+
+    res.json(availableSlots.sort())
+  } catch (error) {
+    console.error('Error fetching available slots:', error)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+}
+
+// Meeting Booking - Simplified without payment
 export const bookMeeting = async (req: AuthRequest, res: Response) => {
   try {
     const { doctorId, enrollmentId, meetingDate, startTime, patientNotes } = req.body
@@ -204,14 +251,7 @@ export const bookMeeting = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: 'Doctor not available at this time' })
     }
 
-    // TEMPORARILY DISABLED STRIPE PAYMENT FOR TESTING
-    // Create a simple booking without payment for now
-    
-    // Set refund deadline (1 day from now)
-    const refundDeadline = new Date()
-    refundDeadline.setDate(refundDeadline.getDate() + 1)
-
-    // Create meeting
+    // Create meeting directly without payment
     const meeting = await Meeting.create({
       patientId,
       doctorId,
@@ -221,14 +261,25 @@ export const bookMeeting = async (req: AuthRequest, res: Response) => {
       endTime,
       patientNotes,
       consultationFee: doctor.DoctorDetail.consultationFee,
-      paymentStatus: 'pending', // Will be updated when Stripe is configured
-      refundDeadline,
-      requestedAt: new Date()
+      status: 'pending', // Doctor needs to approve
+      requestedAt: new Date(),
+      canRefund: false
+    })
+
+    // Include doctor details in response
+    const meetingWithDoctor = await Meeting.findByPk(meeting.id, {
+      include: [
+        {
+          model: User,
+          as: 'Doctor',
+          include: [{ model: DoctorDetails, as: 'DoctorDetail' }]
+        }
+      ]
     })
 
     res.status(201).json({
-      message: 'Meeting booked successfully (payment will be processed later)',
-      meeting
+      message: 'Meeting request submitted successfully',
+      meeting: meetingWithDoctor
     })
   } catch (error) {
     console.error('Error booking meeting:', error)
@@ -236,16 +287,70 @@ export const bookMeeting = async (req: AuthRequest, res: Response) => {
   }
 }
 
-// Doctor Meeting Management
+// Get patient meetings
+export const getPatientMeetings = async (req: AuthRequest, res: Response) => {
+  try {
+    const patientId = parseInt(req.user?.id || '0')
+
+    const meetings = await Meeting.findAll({
+      where: { patientId },
+      include: [
+        {
+          model: User,
+          as: 'Doctor',
+          include: [{ model: DoctorDetails, as: 'DoctorDetail' }]
+        },
+        { model: Rating, as: 'Rating' }
+      ],
+      order: [['meetingDate', 'ASC'], ['startTime', 'ASC']]
+    })
+
+    res.json(meetings)
+  } catch (error) {
+    console.error('Error fetching patient meetings:', error)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+}
+
+// Get doctor meetings
+export const getDoctorMeetings = async (req: AuthRequest, res: Response) => {
+  try {
+    const doctorId = parseInt(req.user?.id || '0')
+
+    const meetings = await Meeting.findAll({
+      where: { doctorId },
+      include: [
+        {
+          model: User,
+          as: 'Patient',
+          attributes: ['id', 'name', 'email']
+        },
+        {
+          model: User,
+          as: 'Doctor',
+          include: [{ model: DoctorDetails, as: 'DoctorDetail' }]
+        },
+        { model: Rating, as: 'Rating' }
+      ],
+      order: [['meetingDate', 'ASC'], ['startTime', 'ASC']]
+    })
+
+    res.json({ meetings })
+  } catch (error) {
+    console.error('Error fetching doctor meetings:', error)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+}
+
+// Approve meeting
 export const approveMeeting = async (req: AuthRequest, res: Response) => {
   try {
     const { meetingId } = req.params
-    const { doctorNotes } = req.body
     const doctorId = parseInt(req.user?.id || '0')
 
     const meeting = await Meeting.findOne({
       where: {
-        id: parseInt(meetingId),
+        id: meetingId,
         doctorId,
         status: 'pending'
       }
@@ -255,15 +360,30 @@ export const approveMeeting = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: 'Meeting not found or already processed' })
     }
 
+    // Check if meeting is paid
+    if (!meeting.isPaid || meeting.paymentStatus !== 'paid') {
+      return res.status(400).json({ error: 'Meeting must be paid before approval' })
+    }
+
     // Generate Jitsi meeting URL
-    const meetingUrl = `https://meet.jit.si/mindcare-${meeting.id}-${Date.now()}`
+    const meetingUrl = `https://meet.jit.si/mindcare-${meetingId}-${Date.now()}`
 
     await meeting.update({
       status: 'approved',
-      doctorNotes,
-      meetingUrl,
-      approvedAt: new Date()
+      approvedAt: new Date(),
+      meetingUrl
     })
+
+    // Send approval notification to patient
+    const { NotificationService } = await import('../services/NotificationService')
+    const notificationService = new NotificationService()
+    
+    await notificationService.createMeetingApprovalNotification(
+      meeting.patientId,
+      Number(meetingId),
+      doctorId,
+      meetingUrl
+    )
 
     res.json({
       message: 'Meeting approved successfully',
@@ -275,15 +395,16 @@ export const approveMeeting = async (req: AuthRequest, res: Response) => {
   }
 }
 
+// Decline meeting
 export const declineMeeting = async (req: AuthRequest, res: Response) => {
   try {
     const { meetingId } = req.params
-    const { declineReason } = req.body
+    const { reason } = req.body
     const doctorId = parseInt(req.user?.id || '0')
 
     const meeting = await Meeting.findOne({
       where: {
-        id: parseInt(meetingId),
+        id: meetingId,
         doctorId,
         status: 'pending'
       }
@@ -293,38 +414,43 @@ export const declineMeeting = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: 'Meeting not found or already processed' })
     }
 
-    // Get payment record separately
-    const payment = await Payment.findOne({
-      where: { meetingId: meeting.id }
-    })
+    // Import payment service for refund processing
+    const { paymentService } = await import('../services/PaymentService')
+    const { NotificationService } = await import('../services/NotificationService')
+    const notificationService = new NotificationService()
 
-    // Refund payment if it was paid
-    if (payment && meeting.paymentStatus === 'paid') {
-      await stripe.refunds.create({
-        payment_intent: meeting.paymentIntentId!
-      })
-
-      await payment.update({
-        status: 'refunded',
-        refundAmount: payment.amount,
-        refundReason: 'Meeting declined by doctor',
-        refundedAt: new Date()
-      })
-
+    // Process refund if meeting was paid
+    if (meeting.isPaid && meeting.paymentStatus === 'paid') {
+      try {
+        await paymentService.processRefundForDeclinedMeeting(
+          Number(meetingId),
+          reason || 'Meeting declined by doctor'
+        )
+      } catch (refundError) {
+        console.error('Error processing refund:', refundError)
+        // Continue with declining the meeting even if refund fails
+        // The refund can be processed manually later
+      }
+    } else {
+      // Update meeting status even if no payment to refund
       await meeting.update({
-        paymentStatus: 'refunded'
+        status: 'declined',
+        declinedAt: new Date(),
+        declineReason: reason || 'Meeting declined by doctor'
       })
+
+      // Send decline notification to patient
+      await notificationService.createMeetingDeclineNotification(
+        meeting.patientId,
+        Number(meetingId),
+        doctorId,
+        reason || 'Meeting declined by doctor'
+      )
     }
 
-    await meeting.update({
-      status: 'declined',
-      declineReason,
-      declinedAt: new Date()
-    })
-
     res.json({
-      message: 'Meeting declined and payment refunded',
-      meeting
+      message: 'Meeting declined successfully',
+      meeting: await Meeting.findByPk(meetingId) // Return updated meeting
     })
   } catch (error) {
     console.error('Error declining meeting:', error)
@@ -332,77 +458,17 @@ export const declineMeeting = async (req: AuthRequest, res: Response) => {
   }
 }
 
-// Get meetings for doctor/patient
-export const getDoctorMeetings = async (req: AuthRequest, res: Response) => {
-  try {
-    const doctorId = parseInt(req.user?.id || '0')
-    const { status, date } = req.query
-
-    const whereClause: any = { doctorId }
-    if (status) whereClause.status = status
-    if (date) whereClause.meetingDate = date
-
-    const meetings = await Meeting.findAll({
-      where: whereClause,
-      include: [
-        { model: User, as: 'Patient', attributes: ['id', 'name', 'email'] },
-        { model: Payment, as: 'Payment' },
-        { model: Rating, as: 'Rating' }
-      ],
-      order: [['meetingDate', 'ASC'], ['startTime', 'ASC']]
-    })
-
-    res.json({ meetings })
-  } catch (error) {
-    console.error('Error getting doctor meetings:', error)
-    res.status(500).json({ error: 'Internal server error' })
-  }
-}
-
-export const getPatientMeetings = async (req: AuthRequest, res: Response) => {
-  try {
-    const patientId = parseInt(req.user?.id || '0')
-    const { status, date } = req.query
-
-    const whereClause: any = { patientId }
-    if (status) whereClause.status = status
-    if (date) whereClause.meetingDate = date
-
-    const meetings = await Meeting.findAll({
-      where: whereClause,
-      include: [
-        { 
-          model: User, 
-          as: 'Doctor', 
-          attributes: ['id', 'name', 'email'],
-          include: [{ model: DoctorDetails, as: 'DoctorDetail' }]
-        },
-        { model: Payment, as: 'Payment' },
-        { model: Rating, as: 'Rating' }
-      ],
-      order: [['meetingDate', 'ASC'], ['startTime', 'ASC']]
-    })
-
-    res.json({ meetings })
-  } catch (error) {
-    console.error('Error getting patient meetings:', error)
-    res.status(500).json({ error: 'Internal server error' })
-  }
-}
-
-// Meeting completion and rating
+// Complete meeting
 export const completeMeeting = async (req: AuthRequest, res: Response) => {
   try {
     const { meetingId } = req.params
-    const userId = parseInt(req.user?.id || '0')
+    const { doctorNotes } = req.body
+    const doctorId = parseInt(req.user?.id || '0')
 
     const meeting = await Meeting.findOne({
       where: {
-        id: parseInt(meetingId),
-        [Op.or]: [
-          { doctorId: userId },
-          { patientId: userId }
-        ],
+        id: meetingId,
+        doctorId,
         status: 'approved'
       }
     })
@@ -413,11 +479,12 @@ export const completeMeeting = async (req: AuthRequest, res: Response) => {
 
     await meeting.update({
       status: 'completed',
+      doctorNotes,
       completedAt: new Date()
     })
 
     res.json({
-      message: 'Meeting marked as completed',
+      message: 'Meeting completed successfully',
       meeting
     })
   } catch (error) {
@@ -426,24 +493,64 @@ export const completeMeeting = async (req: AuthRequest, res: Response) => {
   }
 }
 
-export const rateMeeting = async (req: AuthRequest, res: Response) => {
+// Cancel meeting
+export const cancelMeeting = async (req: AuthRequest, res: Response) => {
   try {
     const { meetingId } = req.params
-    const { 
-      rating, 
-      comment, 
-      communicationRating, 
-      professionalismRating, 
-      knowledgeRating, 
-      overallSatisfaction, 
-      wouldRecommend,
-      isAnonymous 
-    } = req.body
-    const patientId = parseInt(req.user?.id || '0')
+    const { reason } = req.body
+    const userId = parseInt(req.user?.id || '0')
 
     const meeting = await Meeting.findOne({
       where: {
-        id: parseInt(meetingId),
+        id: meetingId,
+        [Op.or]: [
+          { patientId: userId },
+          { doctorId: userId }
+        ],
+        status: { [Op.in]: ['pending', 'approved'] }
+      }
+    })
+
+    if (!meeting) {
+      return res.status(404).json({ error: 'Meeting not found or cannot be cancelled' })
+    }
+
+    await meeting.update({
+      status: 'cancelled',
+      declineReason: reason,
+      cancelledAt: new Date()
+    })
+
+    res.json({
+      message: 'Meeting cancelled successfully',
+      meeting
+    })
+  } catch (error) {
+    console.error('Error cancelling meeting:', error)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+}
+
+// Rate doctor
+export const rateMeeting = async (req: AuthRequest, res: Response) => {
+  try {
+    const { meetingId } = req.params
+    const {
+      rating,
+      comment,
+      communicationRating,
+      professionalismRating,
+      knowledgeRating,
+      overallSatisfaction,
+      wouldRecommend,
+      isAnonymous
+    } = req.body
+    const patientId = parseInt(req.user?.id || '0')
+
+    // Check if meeting exists and is completed
+    const meeting = await Meeting.findOne({
+      where: {
+        id: meetingId,
         patientId,
         status: 'completed'
       }
@@ -453,16 +560,17 @@ export const rateMeeting = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: 'Meeting not found or not completed' })
     }
 
-    // Check if rating already exists
+    // Check if already rated
     const existingRating = await Rating.findOne({
-      where: { meetingId: parseInt(meetingId) }
+      where: { meetingId }
     })
 
     if (existingRating) {
       return res.status(409).json({ error: 'Meeting already rated' })
     }
 
-    const ratingRecord = await Rating.create({
+    // Create rating
+    const newRating = await Rating.create({
       meetingId: parseInt(meetingId),
       patientId,
       doctorId: meeting.doctorId,
@@ -472,7 +580,7 @@ export const rateMeeting = async (req: AuthRequest, res: Response) => {
       professionalismRating,
       knowledgeRating,
       overallSatisfaction,
-      wouldRecommend,
+      wouldRecommend: wouldRecommend || false,
       isAnonymous: isAnonymous || false
     })
 
@@ -484,7 +592,7 @@ export const rateMeeting = async (req: AuthRequest, res: Response) => {
 
     res.status(201).json({
       message: 'Rating submitted successfully',
-      rating: ratingRecord
+      rating: newRating
     })
   } catch (error) {
     console.error('Error rating meeting:', error)
@@ -492,101 +600,91 @@ export const rateMeeting = async (req: AuthRequest, res: Response) => {
   }
 }
 
-// Payment webhook
-export const handleStripeWebhook = async (req: Request, res: Response) => {
+// Get patient statistics
+export const getPatientStats = async (req: AuthRequest, res: Response) => {
   try {
-    const sig = req.headers['stripe-signature'] as string
-    const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET || 'whsec_test_secret'
+    const patientId = parseInt(req.user?.id || '0')
 
-    let event
-    try {
-      event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret)
-    } catch (err: any) {
-      console.log('Webhook signature verification failed:', err.message)
-      return res.status(400).send('Webhook signature verification failed')
+    if (!patientId) {
+      return res.status(401).json({ error: 'Authentication required' })
     }
 
-    // Handle payment success
-    if (event.type === 'payment_intent.succeeded') {
-      const paymentIntent = event.data.object as Stripe.PaymentIntent
-
-      // Update payment and meeting status
-      const payment = await Payment.findOne({
-        where: { stripePaymentIntentId: paymentIntent.id }
-      })
-
-      if (payment) {
-        await payment.update({
-          status: 'succeeded',
-          stripePaymentId: paymentIntent.id,
-          paymentMethod: paymentIntent.payment_method_types[0]
-        })
-
-        await Meeting.update(
-          { paymentStatus: 'paid' },
-          { where: { id: payment.meetingId } }
-        )
-      }
-    }
-
-    res.json({ received: true })
-  } catch (error) {
-    console.error('Error handling Stripe webhook:', error)
-    res.status(500).json({ error: 'Internal server error' })
-  }
-}
-
-// Get doctor ratings
-export const getDoctorRatings = async (req: Request, res: Response) => {
-  try {
-    const { doctorId } = req.params
-    const { page = 1, limit = 10 } = req.query
-
-    const offset = (Number(page) - 1) * Number(limit)
-
-    const ratings = await Rating.findAndCountAll({
-      where: { 
-        doctorId,
-        isApproved: true
-      },
-      include: [
-        { 
-          model: User, 
-          as: 'Patient', 
-          attributes: ['username'] // Only show username if not anonymous
-        }
-      ],
-      order: [['createdAt', 'DESC']],
-      limit: Number(limit),
-      offset
+    // Get total meetings count by status
+    const totalMeetings = await Meeting.count({
+      where: { patientId }
     })
 
-    // Calculate average ratings
-    const avgRating = await Rating.findAll({
-      where: { doctorId, isApproved: true },
-      attributes: [
-        [Rating.sequelize!.fn('AVG', Rating.sequelize!.col('rating')), 'averageRating'],
-        [Rating.sequelize!.fn('AVG', Rating.sequelize!.col('communicationRating')), 'avgCommunication'],
-        [Rating.sequelize!.fn('AVG', Rating.sequelize!.col('professionalismRating')), 'avgProfessionalism'],
-        [Rating.sequelize!.fn('AVG', Rating.sequelize!.col('knowledgeRating')), 'avgKnowledge'],
-        [Rating.sequelize!.fn('AVG', Rating.sequelize!.col('overallSatisfaction')), 'avgSatisfaction'],
-        [Rating.sequelize!.fn('COUNT', Rating.sequelize!.col('id')), 'totalRatings']
-      ],
-      raw: true
+    const pendingMeetings = await Meeting.count({
+      where: { patientId, status: 'pending' }
+    })
+
+    const approvedMeetings = await Meeting.count({
+      where: { patientId, status: 'approved' }
+    })
+
+    const completedMeetings = await Meeting.count({
+      where: { patientId, status: 'completed' }
+    })
+
+    const declinedMeetings = await Meeting.count({
+      where: { patientId, status: 'declined' }
+    })
+
+    const cancelledMeetings = await Meeting.count({
+      where: { patientId, status: 'cancelled' }
+    })
+
+    // Get next upcoming meeting
+    const nextMeeting = await Meeting.findOne({
+      where: {
+        patientId,
+        status: 'approved',
+        meetingDate: {
+          [Op.gte]: new Date()
+        }
+      },
+      order: [['meetingDate', 'ASC'], ['startTime', 'ASC']],
+      include: [
+        {
+          model: User,
+          as: 'Doctor',
+          include: [{ model: DoctorDetails, as: 'DoctorDetail' }]
+        }
+      ]
+    })
+
+    // Get recent completed meetings for rating prompts
+    const recentCompletedMeetings = await Meeting.findAll({
+      where: {
+        patientId,
+        status: 'completed'
+      },
+      order: [['completedAt', 'DESC']],
+      limit: 3,
+      include: [
+        {
+          model: User,
+          as: 'Doctor',
+          include: [{ model: DoctorDetails, as: 'DoctorDetail' }]
+        }
+      ]
     })
 
     res.json({
-      ratings: ratings.rows,
-      pagination: {
-        currentPage: Number(page),
-        totalPages: Math.ceil(ratings.count / Number(limit)),
-        totalItems: ratings.count,
-        itemsPerPage: Number(limit)
-      },
-      averages: avgRating[0]
+      success: true,
+      stats: {
+        totalMeetings,
+        pendingMeetings,
+        approvedMeetings,
+        completedMeetings,
+        declinedMeetings,
+        cancelledMeetings,
+        nextMeeting,
+        recentCompletedMeetings
+      }
     })
   } catch (error) {
-    console.error('Error getting doctor ratings:', error)
+    console.error('Error getting patient stats:', error)
     res.status(500).json({ error: 'Internal server error' })
   }
 }
