@@ -73,19 +73,42 @@ export class StripeService {
     metadata: { [key: string]: string } = {}
   ): Promise<Stripe.Refund> {
     try {
+      // Validate input
+      if (!paymentIntentId) {
+        throw new Error('Payment intent ID is required for refund')
+      }
+
+      console.log(`🔄 Creating Stripe refund for payment intent: ${paymentIntentId}`)
+      
       const refund = await this.stripe.refunds.create({
         payment_intent: paymentIntentId,
         reason,
         metadata: {
           ...metadata,
           platform: 'mindcare',
+          refundTimestamp: new Date().toISOString(),
         },
       })
 
+      console.log(`✅ Stripe refund created successfully: ${refund.id}, amount: ${refund.amount / 100}`)
       return refund
-    } catch (error) {
-      console.error('Error creating refund:', error)
-      throw new Error('Failed to create refund')
+    } catch (error: any) {
+      console.error('❌ Stripe refund creation failed:', error)
+      
+      // Handle specific Stripe errors
+      if (error.type === 'StripeCardError') {
+        throw new Error(`Card error: ${error.message}`)
+      } else if (error.type === 'StripeInvalidRequestError') {
+        throw new Error(`Invalid request: ${error.message}`)
+      } else if (error.type === 'StripeAPIError') {
+        throw new Error(`Stripe API error: ${error.message}`)
+      } else if (error.type === 'StripeConnectionError') {
+        throw new Error('Network error connecting to Stripe')
+      } else if (error.type === 'StripeAuthenticationError') {
+        throw new Error('Stripe authentication failed')
+      }
+      
+      throw new Error(`Failed to create refund: ${error.message || 'Unknown error'}`)
     }
   }
 

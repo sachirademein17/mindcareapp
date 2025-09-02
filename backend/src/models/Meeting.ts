@@ -23,6 +23,17 @@ export interface MeetingAttributes {
   paymentStatus: 'unpaid' | 'pending' | 'paid' | 'refunded' | 'failed'
   paymentId?: number // Reference to Payment record
   
+  // Stripe Integration
+  stripePaymentIntentId?: string // Stripe payment intent ID for this payment
+  stripeRefundId?: string // Stripe refund ID if refunded
+  
+  // Refund Tracking (Direct)
+  refundAmount?: number // Amount refunded to patient
+  refundDate?: Date // When refund was processed
+  refundReason?: string // Why refund was given
+  refundType?: 'full' | 'partial' | 'none' // Type of refund
+  refundProcessed: boolean // Whether refund has been processed
+  
   rating?: number // Patient rating for doctor (1-5 stars)
   ratingComment?: string // Patient's rating comment
   requestedAt: Date
@@ -34,7 +45,7 @@ export interface MeetingAttributes {
   updatedAt: Date
 }
 
-interface MeetingCreationAttributes extends Optional<MeetingAttributes, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'canRefund' | 'requestedAt' | 'isPaid' | 'paymentStatus'> {}
+interface MeetingCreationAttributes extends Optional<MeetingAttributes, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'canRefund' | 'requestedAt' | 'isPaid' | 'paymentStatus' | 'refundProcessed'> {}
 
 export class Meeting extends Model<MeetingAttributes, MeetingCreationAttributes> implements MeetingAttributes {
   public id!: number
@@ -56,6 +67,17 @@ export class Meeting extends Model<MeetingAttributes, MeetingCreationAttributes>
   public isPaid!: boolean
   public paymentStatus!: 'unpaid' | 'pending' | 'paid' | 'refunded' | 'failed'
   public paymentId?: number
+  
+  // Stripe Integration
+  public stripePaymentIntentId?: string
+  public stripeRefundId?: string
+  
+  // Refund Tracking (Direct)
+  public refundAmount?: number
+  public refundDate?: Date
+  public refundReason?: string
+  public refundType?: 'full' | 'partial' | 'none'
+  public refundProcessed!: boolean
   
   public rating?: number
   public ratingComment?: string
@@ -180,6 +202,16 @@ Meeting.init(
       onUpdate: 'CASCADE',
       onDelete: 'SET NULL',
     },
+    stripePaymentIntentId: {
+      type: DataTypes.STRING(500),
+      allowNull: true,
+      comment: 'Stripe payment intent ID',
+    },
+    stripeRefundId: {
+      type: DataTypes.STRING(500),
+      allowNull: true,
+      comment: 'Stripe refund ID if refunded',
+    },
     rating: {
       type: DataTypes.INTEGER,
       allowNull: true,
@@ -193,6 +225,32 @@ Meeting.init(
       type: DataTypes.TEXT,
       allowNull: true,
       comment: 'Patient rating comment',
+    },
+    refundAmount: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      comment: 'Amount refunded to patient',
+    },
+    refundDate: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      comment: 'When refund was processed',
+    },
+    refundReason: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      comment: 'Why refund was given',
+    },
+    refundType: {
+      type: DataTypes.ENUM('full', 'partial', 'none'),
+      allowNull: true,
+      comment: 'Type of refund processed',
+    },
+    refundProcessed: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'Whether refund has been processed',
     },
     requestedAt: {
       type: DataTypes.DATE,

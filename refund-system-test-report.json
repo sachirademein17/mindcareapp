@@ -1,0 +1,28 @@
+{
+  "summary": {
+    "totalTests": 2,
+    "passed": 0,
+    "failed": 2,
+    "successRate": "0.00%"
+  },
+  "testResults": [
+    {
+      "testName": "Doctor Login",
+      "status": "FAIL",
+      "message": "",
+      "timestamp": "2025-09-02T14:53:41.180Z",
+      "data": null
+    },
+    {
+      "testName": "Patient Login",
+      "status": "FAIL",
+      "message": "",
+      "timestamp": "2025-09-02T14:53:41.185Z",
+      "data": null
+    }
+  ],
+  "timestamp": "2025-09-02T14:53:41.187Z",
+  "conclusions": [
+    "❌ 2 tests failed - refund system needs attention"
+  ]
+}

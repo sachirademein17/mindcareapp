@@ -1,4 +1,5 @@
 // 📁 backend/src/services/PaymentService.ts
+import { Op } from 'sequelize'
 import { stripeService } from './StripeService'
 import Payment from '../models/Payment'
 import Meeting from '../models/Meeting'
@@ -114,11 +115,11 @@ export class PaymentService {
           stripeChargeId: paymentIntent.latest_charge as string,
         })
 
-        // Update meeting
+        // Update meeting - For escrow model, payment is held until doctor approval
         const meeting = (payment as any).Meeting
         await meeting.update({
-          isPaid: true,
-          paymentStatus: 'paid',
+          isPaid: false, // Not actually paid to doctor yet - money is in escrow
+          paymentStatus: 'pending', // Payment is pending doctor approval for escrow transfer
         })
 
         // Send notifications
@@ -157,16 +158,23 @@ export class PaymentService {
   }
 
   /**
-   * Process refund when doctor declines meeting
+   * Process refund when doctor declines meeting - Enhanced version
    */
   async processRefundForDeclinedMeeting(meetingId: number, declineReason: string) {
     try {
-      // Get meeting with payment details
+      console.log(`🔄 Starting refund process for declined meeting ${meetingId}`)
+      
+      // Get meeting with payment details - enhanced query to find any eligible payment
       const meeting = await Meeting.findByPk(meetingId, {
         include: [
           {
             model: Payment,
-            where: { status: 'completed' },
+            // Look for payments that can be refunded
+            where: { 
+              status: { 
+                [Op.in]: ['pending', 'completed', 'succeeded', 'paid'] 
+              }
+            },
             required: false,
           },
           { model: User, as: 'Patient', attributes: ['id', 'name', 'email'] },
@@ -178,57 +186,215 @@ export class PaymentService {
         throw new Error('Meeting not found')
       }
 
-      const payment = (meeting as any).Payment
+      console.log(`📊 Meeting found:`, {
+        id: meeting.id,
+        paymentStatus: meeting.paymentStatus,
+        consultationFee: meeting.consultationFee,
+        isPaid: meeting.isPaid
+      })
+
+      // Also try to find payment by meetingId if association didn't work
+      let payment = (meeting as any).Payment
       if (!payment) {
-        // No payment to refund
-        return { success: true, message: 'No payment to refund' }
+        console.log('🔍 Payment not found through association, trying direct lookup...')
+        payment = await Payment.findOne({
+          where: {
+            meetingId,
+            status: { [Op.in]: ['pending', 'completed', 'succeeded', 'paid'] }
+          }
+        })
       }
 
+      if (!payment) {
+        console.log(`ℹ️ No eligible payment found for meeting ${meetingId}`)
+        
+        // Still update meeting status to declined
+        await meeting.update({
+          status: 'declined',
+          declinedAt: new Date(),
+          declineReason,
+          paymentStatus: 'unpaid' // Reset to unpaid since no payment to refund
+        })
+        
+        return { 
+          success: true, 
+          message: 'Meeting declined - no payment to refund',
+          noRefundNeeded: true
+        }
+      }
+
+      console.log(`💳 Payment found:`, {
+        id: payment.id,
+        status: payment.status,
+        amount: payment.amount,
+        stripePaymentIntentId: payment.stripePaymentIntentId
+      })
+
+      // Validate payment data before attempting refund
       if (!payment.stripePaymentIntentId) {
-        throw new Error('No Stripe payment intent found')
+        console.error('❌ No Stripe payment intent ID found')
+        throw new Error('Payment intent ID missing - cannot process refund')
+      }
+
+      // Verify payment intent exists and can be refunded
+      let paymentIntent
+      try {
+        paymentIntent = await stripeService.getPaymentIntent(payment.stripePaymentIntentId)
+        console.log(`🔍 Stripe payment intent status: ${paymentIntent.status}`)
+        
+        if (paymentIntent.status !== 'succeeded') {
+          console.log(`⚠️ Payment intent status is '${paymentIntent.status}' - may not be refundable`)
+          if (paymentIntent.status === 'requires_payment_method' || paymentIntent.status === 'canceled') {
+            // Update meeting and payment status but no Stripe refund needed
+            await Promise.all([
+              meeting.update({
+                status: 'declined',
+                paymentStatus: 'failed',
+                declinedAt: new Date(),
+                declineReason,
+                isPaid: false
+              }),
+              payment.update({
+                status: 'failed',
+                failureReason: `Payment not completed when meeting was declined (status: ${paymentIntent.status})`
+              })
+            ])
+            
+            return { 
+              success: true, 
+              message: 'Meeting declined - payment was not completed, no refund needed',
+              paymentStatus: paymentIntent.status
+            }
+          }
+        }
+      } catch (stripeError: any) {
+        console.error('❌ Error verifying payment intent:', stripeError)
+        
+        // If we can't verify with Stripe, update local records but don't fail
+        await Promise.all([
+          meeting.update({
+            status: 'declined',
+            paymentStatus: 'failed',
+            declinedAt: new Date(),
+            declineReason,
+            isPaid: false
+          }),
+          payment.update({
+            status: 'failed',
+            failureReason: `Could not verify payment with Stripe: ${stripeError.message}`
+          })
+        ])
+        
+        return { 
+          success: true, 
+          message: 'Meeting declined - could not verify payment status with Stripe',
+          stripeError: stripeError.message
+        }
       }
 
       // Create refund in Stripe
-      const refund = await stripeService.createRefund(
-        payment.stripePaymentIntentId,
-        'requested_by_customer',
-        {
-          meetingId: meetingId.toString(),
-          reason: 'Doctor declined meeting',
-          declineReason: declineReason,
-        }
-      )
+      let refund
+      try {
+        console.log(`💰 Creating Stripe refund for amount: $${payment.amount}`)
+        refund = await stripeService.createRefund(
+          payment.stripePaymentIntentId,
+          'requested_by_customer',
+          {
+            meetingId: meetingId.toString(),
+            reason: 'Doctor declined meeting',
+            declineReason: declineReason,
+            originalAmount: payment.amount.toString(),
+            refundType: 'full_doctor_decline'
+          }
+        )
+        console.log(`✅ Stripe refund created successfully: ${refund.id}`)
+      } catch (stripeError: any) {
+        console.error('❌ Stripe refund failed:', stripeError)
+        
+        // Update records to show refund attempt failed
+        await Promise.all([
+          meeting.update({
+            status: 'declined',
+            paymentStatus: 'failed',
+            declinedAt: new Date(),
+            declineReason: `${declineReason} (Refund failed: ${stripeError.message})`,
+            isPaid: false
+          }),
+          payment.update({
+            status: 'failed',
+            failureReason: `Stripe refund failed: ${stripeError.message}`,
+            refundReason: declineReason
+          })
+        ])
+        
+        throw new Error(`Stripe refund failed: ${stripeError.message}`)
+      }
 
       // Update payment record
-      await payment.update({
-        status: 'refunded',
-        refundDate: new Date(),
-        refundAmount: payment.amount,
-        refundReason: `Doctor declined: ${declineReason}`,
-        stripeRefundId: refund.id,
-      })
+      try {
+        await payment.update({
+          status: 'refunded',
+          refundDate: new Date(),
+          refundAmount: payment.amount,
+          refundReason: `Doctor declined: ${declineReason}`,
+          stripeRefundId: refund.id,
+        })
+        console.log('✅ Payment record updated to refunded status')
+      } catch (dbError: any) {
+        console.error('❌ Failed to update payment record:', dbError)
+        throw new Error('Refund processed in Stripe but failed to update payment record')
+      }
 
-      // Update meeting
-      await meeting.update({
-        paymentStatus: 'refunded',
-        status: 'declined',
-        declinedAt: new Date(),
-        declineReason,
-      })
+      // Update meeting status
+      try {
+        await meeting.update({
+          paymentStatus: 'refunded',
+          status: 'declined',
+          declinedAt: new Date(),
+          declineReason,
+          isPaid: false,
+        })
+        console.log('✅ Meeting status updated to declined with refund')
+      } catch (dbError: any) {
+        console.error('❌ Failed to update meeting status:', dbError)
+        throw new Error('Refund processed but failed to update meeting status')
+      }
 
       // Send refund notification to patient
-      await this.notificationService.createRefundNotification(
-        payment.patientId,
-        payment.id,
-        meetingId,
-        payment.amount,
-        `Your meeting was declined by the doctor. Reason: ${declineReason}`
-      )
+      try {
+        await this.notificationService.createRefundNotification(
+          payment.patientId,
+          payment.id,
+          meetingId,
+          payment.amount,
+          `Your meeting was declined by the doctor. Reason: ${declineReason}. A full refund of $${payment.amount} has been processed and will appear in your account within 5-10 business days.`
+        )
+        console.log('✅ Refund notification sent to patient')
+      } catch (notificationError: any) {
+        console.error('⚠️ Failed to send refund notification:', notificationError)
+        // Don't fail the whole process for notification errors
+      }
 
-      return { success: true, refund, payment, meeting }
-    } catch (error) {
-      console.error('Error processing refund for declined meeting:', error)
-      throw new Error('Failed to process refund')
+      return { 
+        success: true, 
+        refund, 
+        payment: await Payment.findByPk(payment.id), 
+        meeting: await Meeting.findByPk(meetingId),
+        message: `Full refund of $${payment.amount} processed successfully`
+      }
+    } catch (error: any) {
+      console.error('❌ Error processing refund for declined meeting:', error)
+      
+      // Log detailed error for debugging
+      console.error('❌ Full error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        meetingId,
+        declineReason
+      })
+      
+      throw new Error(`Failed to process refund: ${error.message}`)
     }
   }
 

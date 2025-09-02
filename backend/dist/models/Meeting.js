@@ -118,6 +118,16 @@ Meeting.init({
         onUpdate: 'CASCADE',
         onDelete: 'SET NULL',
     },
+    stripePaymentIntentId: {
+        type: sequelize_1.DataTypes.STRING(500),
+        allowNull: true,
+        comment: 'Stripe payment intent ID',
+    },
+    stripeRefundId: {
+        type: sequelize_1.DataTypes.STRING(500),
+        allowNull: true,
+        comment: 'Stripe refund ID if refunded',
+    },
     rating: {
         type: sequelize_1.DataTypes.INTEGER,
         allowNull: true,
@@ -131,6 +141,32 @@ Meeting.init({
         type: sequelize_1.DataTypes.TEXT,
         allowNull: true,
         comment: 'Patient rating comment',
+    },
+    refundAmount: {
+        type: sequelize_1.DataTypes.DECIMAL(10, 2),
+        allowNull: true,
+        comment: 'Amount refunded to patient',
+    },
+    refundDate: {
+        type: sequelize_1.DataTypes.DATE,
+        allowNull: true,
+        comment: 'When refund was processed',
+    },
+    refundReason: {
+        type: sequelize_1.DataTypes.TEXT,
+        allowNull: true,
+        comment: 'Why refund was given',
+    },
+    refundType: {
+        type: sequelize_1.DataTypes.ENUM('full', 'partial', 'none'),
+        allowNull: true,
+        comment: 'Type of refund processed',
+    },
+    refundProcessed: {
+        type: sequelize_1.DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        comment: 'Whether refund has been processed',
     },
     requestedAt: {
         type: sequelize_1.DataTypes.DATE,
