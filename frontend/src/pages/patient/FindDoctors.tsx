@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import axios from 'axios'
 import TimeSlotPicker from '../../components/TimeSlotPicker'
+import DoctorRatings from '../../components/DoctorRatings'
 
 interface Enrollment {
   id: number
@@ -306,6 +307,11 @@ const FindDoctors = () => {
                         </div>
                       </div>
                     )}
+                    
+                    {/* Doctor Ratings */}
+                    <div className="mb-4">
+                      <DoctorRatings doctorId={doc.id} showDetailedView={false} />
+                    </div>
                     
                     <div className="flex justify-end space-x-3">
                       {(() => {

@@ -20,6 +20,8 @@ const warningRoutes_1 = __importDefault(require("./routes/warningRoutes"));
 const meetingRoutes_1 = __importDefault(require("./routes/meetingRoutes"));
 const paymentRoutes_1 = __importDefault(require("./routes/paymentRoutes"));
 const notificationRoutes_1 = __importDefault(require("./routes/notificationRoutes"));
+const simple_refund_routes_1 = __importDefault(require("./routes/simple-refund.routes"));
+const ratingRoutes_1 = __importDefault(require("./routes/ratingRoutes"));
 // DB Config
 const postgres_config_1 = __importDefault(require("./config/postgres.config"));
 const index_1 = require("./models/index");
@@ -45,6 +47,8 @@ app.use('/api/warnings', warningRoutes_1.default);
 app.use('/api/meetings', meetingRoutes_1.default);
 app.use('/api/payments', paymentRoutes_1.default);
 app.use('/api/notifications', notificationRoutes_1.default);
+app.use('/api/refund', simple_refund_routes_1.default);
+app.use('/api/ratings', ratingRoutes_1.default);
 // 🏥 Simple health check for testing
 app.get('/api/health', (req, res) => {
     res.json({

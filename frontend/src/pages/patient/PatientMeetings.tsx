@@ -86,7 +86,9 @@ const PatientMeetings: React.FC = () => {
       const response = await axios.get('http://localhost:5000/api/meetings/patient', {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       })
-      setMeetings(response.data.meetings || [])
+      // Handle both response formats: {meetings: array} or array directly
+      const meetingsData = response.data.meetings || response.data || []
+      setMeetings(meetingsData)
       setLoading(false)
     } catch (error) {
       console.error('Error fetching meetings:', error)
@@ -145,9 +147,15 @@ const PatientMeetings: React.FC = () => {
     if (!ratingModal.meeting) return
 
     try {
-      await axios.put(`http://localhost:5000/api/meetings/${ratingModal.meeting.id}/rate`, {
+      await axios.post(`http://localhost:5000/api/meetings/${ratingModal.meeting.id}/rate`, {
         rating,
-        ratingComment
+        comment: ratingComment,
+        communicationRating: rating, // Use same rating for all categories for now
+        professionalismRating: rating,
+        knowledgeRating: rating,
+        overallSatisfaction: rating,
+        wouldRecommend: rating >= 4,
+        isAnonymous: false
       }, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       })

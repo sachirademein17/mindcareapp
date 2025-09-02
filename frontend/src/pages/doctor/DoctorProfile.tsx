@@ -1,6 +1,8 @@
 ﻿import React, { useState, useEffect } from 'react';
+import DoctorRatings from '../../components/DoctorRatings';
 
 interface DoctorData {
+  id?: number;
   firstName: string;
   lastName: string;
   email: string;
@@ -56,7 +58,7 @@ const DoctorProfile: React.FC = () => {
     setIsLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5001/api/auth/profile', {
+      const response = await fetch('http://localhost:5000/api/auth/profile', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -101,7 +103,7 @@ const DoctorProfile: React.FC = () => {
     setIsSaving(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5001/api/auth/profile', {
+      const response = await fetch('http://localhost:5000/api/auth/profile', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -381,6 +383,13 @@ const DoctorProfile: React.FC = () => {
             </button>
           </div>
         </form>
+        
+        {/* Doctor Ratings Section */}
+        {formData.id && (
+          <div className="mt-8">
+            <DoctorRatings doctorId={formData.id} showDetailedView={true} />
+          </div>
+        )}
       </div>
     </div>
   );

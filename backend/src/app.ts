@@ -15,6 +15,8 @@ import warningRoutes from './routes/warningRoutes'
 import meetingRoutes from './routes/meetingRoutes'
 import paymentRoutes from './routes/paymentRoutes'
 import notificationRoutes from './routes/notificationRoutes'
+import refundRoutes from './routes/simple-refund.routes'
+import ratingRoutes from './routes/ratingRoutes'
 
 // DB Config
 import connectPostgres from './config/postgres.config'
@@ -46,6 +48,8 @@ app.use('/api/warnings', warningRoutes)
 app.use('/api/meetings', meetingRoutes)
 app.use('/api/payments', paymentRoutes)
 app.use('/api/notifications', notificationRoutes)
+app.use('/api/refund', refundRoutes)
+app.use('/api/ratings', ratingRoutes)
 
 // 🏥 Simple health check for testing
 app.get('/api/health', (req, res) => {

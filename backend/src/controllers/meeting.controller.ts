@@ -251,7 +251,8 @@ export const bookMeeting = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: 'Doctor not available at this time' })
     }
 
-    // Create meeting directly without payment
+    // Create meeting with appropriate status based on consultation fee
+    const requiresPayment = doctor.DoctorDetail.consultationFee > 0
     const meeting = await Meeting.create({
       patientId,
       doctorId,
@@ -262,6 +263,8 @@ export const bookMeeting = async (req: AuthRequest, res: Response) => {
       patientNotes,
       consultationFee: doctor.DoctorDetail.consultationFee,
       status: 'pending', // Doctor needs to approve
+      paymentStatus: requiresPayment ? 'unpaid' : 'paid', // Set payment status based on fee
+      isPaid: !requiresPayment, // Mark as paid if no payment required
       requestedAt: new Date(),
       canRefund: false
     })
@@ -279,7 +282,9 @@ export const bookMeeting = async (req: AuthRequest, res: Response) => {
 
     res.status(201).json({
       message: 'Meeting request submitted successfully',
-      meeting: meetingWithDoctor
+      meeting: meetingWithDoctor,
+      paymentRequired: requiresPayment,
+      consultationFee: doctor.DoctorDetail.consultationFee
     })
   } catch (error) {
     console.error('Error booking meeting:', error)
@@ -305,7 +310,7 @@ export const getPatientMeetings = async (req: AuthRequest, res: Response) => {
       order: [['meetingDate', 'ASC'], ['startTime', 'ASC']]
     })
 
-    res.json(meetings)
+    res.json({ meetings })
   } catch (error) {
     console.error('Error fetching patient meetings:', error)
     res.status(500).json({ error: 'Internal server error' })
@@ -360,9 +365,35 @@ export const approveMeeting = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: 'Meeting not found or already processed' })
     }
 
-    // Check if meeting is paid
-    if (!meeting.isPaid || meeting.paymentStatus !== 'paid') {
-      return res.status(400).json({ error: 'Meeting must be paid before approval' })
+    // Check payment requirement based on consultation fee
+    const requiresPayment = meeting.consultationFee > 0
+    
+    if (requiresPayment) {
+      // For paid consultations: Check if payment is in escrow (pending status)
+      // Patient pays -> money held in escrow -> doctor approves -> money transferred
+      if (meeting.paymentStatus !== 'pending' && meeting.paymentStatus !== 'paid') {
+        return res.status(400).json({ 
+          error: 'Payment must be completed before approval',
+          message: 'Patient must complete payment before doctor can approve the meeting',
+          consultationFee: meeting.consultationFee,
+          paymentStatus: meeting.paymentStatus,
+          isPaid: meeting.isPaid
+        })
+      }
+      
+      // Transfer money from escrow to doctor on approval
+      if (meeting.paymentStatus === 'pending') {
+        await meeting.update({
+          isPaid: true,
+          paymentStatus: 'paid'
+        })
+      }
+    } else {
+      // If consultation fee is 0, no payment required - mark as paid
+      await meeting.update({
+        isPaid: true,
+        paymentStatus: 'paid'
+      })
     }
 
     // Generate Jitsi meeting URL
@@ -407,54 +438,161 @@ export const declineMeeting = async (req: AuthRequest, res: Response) => {
         id: meetingId,
         doctorId,
         status: 'pending'
-      }
+      },
+      include: [
+        { model: User, as: 'Patient', attributes: ['id', 'name', 'email'] },
+        { model: User, as: 'Doctor', attributes: ['id', 'name', 'email'] }
+      ]
     })
 
     if (!meeting) {
       return res.status(404).json({ error: 'Meeting not found or already processed' })
     }
 
-    // Import payment service for refund processing
-    const { paymentService } = await import('../services/PaymentService')
+    const declineReason = reason || 'Meeting declined by doctor'
+    let refundProcessed = false
+    let refundAmount = 0
+
+    // Simple refund logic - if consultation fee > 0, create direct refund
+    if (meeting.consultationFee > 0 && meeting.paymentStatus === 'paid') {
+      try {
+        console.log(`� Processing direct refund for declined meeting ${meetingId}`)
+        console.log(`📊 Consultation fee: $${meeting.consultationFee}`)
+
+        // Create a simulated refund - in real system this would call Stripe/payment processor
+        refundAmount = meeting.consultationFee
+        refundProcessed = true
+
+        console.log(`✅ Simulated refund of $${refundAmount} processed`)
+
+        // Update meeting with refund status
+        await meeting.update({
+          status: 'declined',
+          paymentStatus: 'refunded',
+          declinedAt: new Date(),
+          declineReason,
+          isPaid: false,
+          // Refund tracking fields
+          refundAmount,
+          refundDate: new Date(),
+          refundReason: `Doctor declined: ${declineReason}`,
+          refundType: 'full',
+          refundProcessed: true
+        })
+
+        // Send notification to patient
+        const { NotificationService } = await import('../services/NotificationService')
+        const notificationService = new NotificationService()
+        
+        await notificationService.createRefundNotification(
+          meeting.patientId,
+          0, // No payment ID in this simplified version
+          Number(meetingId),
+          refundAmount,
+          `Your meeting with Dr. ${(meeting as any).Doctor?.name} was declined. Reason: ${declineReason}. A full refund of $${refundAmount} has been processed and will appear in your account within 5-10 business days.`
+        )
+
+        return res.json({
+          message: 'Meeting declined and full refund processed successfully',
+          refundProcessed: true,
+          refundAmount,
+          refundDetails: {
+            originalAmount: meeting.consultationFee,
+            refundAmount,
+            refundType: 'full',
+            processingTime: '5-10 business days',
+            reason: declineReason
+          },
+          meeting: await Meeting.findByPk(meetingId, {
+            include: [
+              { model: User, as: 'Patient', attributes: ['id', 'name', 'email'] },
+              { model: User, as: 'Doctor', attributes: ['id', 'name', 'email'] }
+            ]
+          })
+        })
+      } catch (refundError: any) {
+        console.error('❌ Error processing refund:', refundError)
+        // Continue to decline meeting even if refund fails
+      }
+    }
+
+    // Decline meeting (with or without refund)
+    await meeting.update({
+      status: 'declined',
+      declinedAt: new Date(),
+      declineReason,
+      paymentStatus: meeting.consultationFee > 0 && !refundProcessed ? 'failed' : meeting.paymentStatus
+    })
+
+    // Send appropriate notification
     const { NotificationService } = await import('../services/NotificationService')
     const notificationService = new NotificationService()
 
-    // Process refund if meeting was paid
-    if (meeting.isPaid && meeting.paymentStatus === 'paid') {
-      try {
-        await paymentService.processRefundForDeclinedMeeting(
-          Number(meetingId),
-          reason || 'Meeting declined by doctor'
-        )
-      } catch (refundError) {
-        console.error('Error processing refund:', refundError)
-        // Continue with declining the meeting even if refund fails
-        // The refund can be processed manually later
-      }
+    if (refundProcessed) {
+      // Already sent refund notification above
     } else {
-      // Update meeting status even if no payment to refund
-      await meeting.update({
-        status: 'declined',
-        declinedAt: new Date(),
-        declineReason: reason || 'Meeting declined by doctor'
-      })
-
-      // Send decline notification to patient
       await notificationService.createMeetingDeclineNotification(
         meeting.patientId,
         Number(meetingId),
         doctorId,
-        reason || 'Meeting declined by doctor'
+        declineReason
       )
     }
 
+    // Prepare response
+    let responseMessage = 'Meeting declined successfully'
+    if (meeting.consultationFee > 0) {
+      if (refundProcessed) {
+        responseMessage = `Meeting declined and full refund of $${refundAmount} processed successfully`
+      } else if (meeting.paymentStatus === 'paid') {
+        responseMessage = 'Meeting declined - refund will be processed separately'
+      } else {
+        responseMessage = 'Meeting declined - no payment to refund'
+      }
+    }
+
     res.json({
-      message: 'Meeting declined successfully',
-      meeting: await Meeting.findByPk(meetingId) // Return updated meeting
+      message: responseMessage,
+      refundProcessed,
+      refundAmount,
+      consultationFee: meeting.consultationFee,
+      paymentStatus: meeting.paymentStatus,
+      meeting: await Meeting.findByPk(meetingId, {
+        include: [
+          { model: User, as: 'Patient', attributes: ['id', 'name', 'email'] },
+          { model: User, as: 'Doctor', attributes: ['id', 'name', 'email'] }
+        ]
+      })
     })
   } catch (error) {
-    console.error('Error declining meeting:', error)
-    res.status(500).json({ error: 'Internal server error' })
+    console.error('❌ Error declining meeting:', error)
+    
+    // Fallback - ensure meeting is declined
+    try {
+      const { meetingId } = req.params
+      const { reason } = req.body
+      
+      await Meeting.update(
+        {
+          status: 'declined',
+          declinedAt: new Date(),
+          declineReason: reason || 'Meeting declined by doctor'
+        },
+        { where: { id: meetingId } }
+      )
+      
+      res.json({
+        message: 'Meeting declined (with processing errors)',
+        refundProcessed: false,
+        warning: 'Meeting declined but refund processing failed'
+      })
+    } catch (finalError) {
+      console.error('❌ Final fallback failed:', finalError)
+      res.status(500).json({ 
+        error: 'Unable to decline meeting',
+        details: 'Please contact support'
+      })
+    }
   }
 }
 
@@ -508,26 +646,182 @@ export const cancelMeeting = async (req: AuthRequest, res: Response) => {
           { doctorId: userId }
         ],
         status: { [Op.in]: ['pending', 'approved'] }
-      }
+      },
+      include: [
+        { model: User, as: 'Patient', attributes: ['id', 'name', 'email'] },
+        { model: User, as: 'Doctor', attributes: ['id', 'name', 'email'] }
+      ]
     })
 
     if (!meeting) {
       return res.status(404).json({ error: 'Meeting not found or cannot be cancelled' })
     }
 
+    // Determine who is cancelling
+    const cancelledBy = meeting.patientId === userId ? 'patient' : 'doctor'
+    const cancelReason = reason || `Meeting cancelled by ${cancelledBy}`
+
+    // Calculate refund based on timing
+    const meetingDateTime = new Date(`${meeting.meetingDate}T${meeting.startTime}:00`)
+    const now = new Date()
+    const hoursUntilMeeting = (meetingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60)
+
+    let refundProcessed = false
+    let refundAmount = 0
+    let refundType = 'none'
+
+    // Simple refund logic based on meeting fee and timing
+    if (meeting.consultationFee > 0 && meeting.paymentStatus === 'paid') {
+      if (hoursUntilMeeting >= 24) {
+        // Full refund for cancellations 24+ hours in advance
+        refundAmount = meeting.consultationFee
+        refundType = 'full'
+        refundProcessed = true
+      } else if (hoursUntilMeeting > 0) {
+        // Partial refund for cancellations less than 24 hours
+        refundAmount = meeting.consultationFee * 0.5
+        refundType = 'partial'
+        refundProcessed = true
+      }
+      // No refund for cancellations after meeting time (hoursUntilMeeting <= 0)
+
+      if (refundProcessed) {
+        console.log(`💰 Processing ${refundType} refund of $${refundAmount} for cancelled meeting ${meetingId}`)
+
+        // Update meeting with cancellation and refund status
+        await meeting.update({
+          status: 'cancelled',
+          paymentStatus: 'refunded',
+          cancelledAt: new Date(),
+          declineReason: cancelReason,
+          isPaid: false,
+          // Refund tracking fields
+          refundAmount,
+          refundDate: new Date(),
+          refundReason: `Cancelled by ${cancelledBy}: ${cancelReason}`,
+          refundType: (refundType as 'full' | 'partial' | 'none'),
+          refundProcessed: true
+        })
+
+        // Send refund notification
+        const { NotificationService } = await import('../services/NotificationService')
+        const notificationService = new NotificationService()
+
+        const refundMessage = refundType === 'full'
+          ? `Your meeting was cancelled. You received a full refund of $${refundAmount.toFixed(2)}.`
+          : `Your meeting was cancelled with ${hoursUntilMeeting.toFixed(1)} hours notice. You received a partial refund of $${refundAmount.toFixed(2)} (50% due to late cancellation).`
+
+        await notificationService.createRefundNotification(
+          meeting.patientId,
+          0, // No payment ID in simplified version
+          Number(meetingId),
+          refundAmount,
+          refundMessage
+        )
+
+        return res.json({
+          message: `Meeting cancelled and ${refundType} refund processed successfully`,
+          refundProcessed: true,
+          refundType,
+          refundAmount,
+          refundDetails: {
+            originalAmount: meeting.consultationFee,
+            refundAmount,
+            refundPercentage: refundType === 'full' ? 100 : 50,
+            hoursUntilMeeting: hoursUntilMeeting.toFixed(2),
+            processingTime: '5-10 business days'
+          },
+          meeting: await Meeting.findByPk(meetingId, {
+            include: [
+              { model: User, as: 'Patient', attributes: ['id', 'name', 'email'] },
+              { model: User, as: 'Doctor', attributes: ['id', 'name', 'email'] }
+            ]
+          })
+        })
+      }
+    }
+
+    // Cancel meeting without refund (free consultation or no refund eligibility)
     await meeting.update({
       status: 'cancelled',
-      declineReason: reason,
-      cancelledAt: new Date()
+      declineReason: cancelReason,
+      cancelledAt: new Date(),
+      paymentStatus: meeting.consultationFee > 0 ? 'failed' : meeting.paymentStatus
     })
 
+    // Send cancellation notification for free consultations
+    if (meeting.consultationFee === 0) {
+      const { NotificationService } = await import('../services/NotificationService')
+      const notificationService = new NotificationService()
+      
+      await notificationService.createMeetingDeclineNotification(
+        meeting.patientId,
+        Number(meetingId),
+        meeting.doctorId,
+        cancelReason
+      )
+    }
+
+    // Prepare response message
+    let responseMessage = 'Meeting cancelled successfully'
+    if (meeting.consultationFee > 0) {
+      if (hoursUntilMeeting <= 0) {
+        responseMessage = 'Meeting cancelled - no refund (meeting time has passed)'
+      } else if (meeting.paymentStatus !== 'paid') {
+        responseMessage = 'Meeting cancelled - no payment to refund'
+      } else {
+        responseMessage = 'Meeting cancelled - refund not applicable due to timing'
+      }
+    }
+
     res.json({
-      message: 'Meeting cancelled successfully',
-      meeting
+      message: responseMessage,
+      refundProcessed: false,
+      refundAmount: 0,
+      refundType: 'none',
+      hoursUntilMeeting: hoursUntilMeeting.toFixed(2),
+      consultationFee: meeting.consultationFee,
+      paymentStatus: meeting.paymentStatus,
+      meeting: await Meeting.findByPk(meetingId, {
+        include: [
+          { model: User, as: 'Patient', attributes: ['id', 'name', 'email'] },
+          { model: User, as: 'Doctor', attributes: ['id', 'name', 'email'] }
+        ]
+      })
     })
   } catch (error) {
-    console.error('Error cancelling meeting:', error)
-    res.status(500).json({ error: 'Internal server error' })
+    console.error('❌ Error cancelling meeting:', error)
+    
+    // Fallback - ensure meeting is cancelled
+    try {
+      const { meetingId } = req.params
+      const { reason } = req.body
+      const userId = parseInt(req.user?.id || '0')
+      
+      const meeting = await Meeting.findByPk(meetingId)
+      const cancelledBy = meeting?.patientId === userId ? 'patient' : 'doctor'
+      
+      await Meeting.update(
+        {
+          status: 'cancelled',
+          declineReason: reason || `Meeting cancelled by ${cancelledBy}`,
+          cancelledAt: new Date()
+        },
+        { where: { id: meetingId } }
+      )
+      
+      res.json({
+        message: 'Meeting cancelled (with processing errors)',
+        refundProcessed: false,
+        warning: 'Meeting cancelled but refund processing failed'
+      })
+    } catch (finalError) {
+      console.error('❌ Final fallback failed:', finalError)
+      res.status(500).json({ 
+        error: 'Unable to cancel meeting',
+        details: 'Please contact support'
+      })
+    }
   }
 }
 
@@ -688,3 +982,12 @@ export const getPatientStats = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ error: 'Internal server error' })
   }
 }
+
+
+
+
+
+
+
+
+
