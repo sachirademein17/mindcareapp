@@ -244,7 +244,6 @@ Meeting.init(
     refundType: {
       type: DataTypes.ENUM('full', 'partial', 'none'),
       allowNull: true,
-      comment: 'Type of refund processed',
     },
     refundProcessed: {
       type: DataTypes.BOOLEAN,

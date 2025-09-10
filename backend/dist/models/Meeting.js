@@ -160,7 +160,6 @@ Meeting.init({
     refundType: {
         type: sequelize_1.DataTypes.ENUM('full', 'partial', 'none'),
         allowNull: true,
-        comment: 'Type of refund processed',
     },
     refundProcessed: {
         type: sequelize_1.DataTypes.BOOLEAN,

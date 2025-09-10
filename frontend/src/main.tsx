@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import './index.css'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import App from './App'
 import SelectRole from './pages/SelectRole'
 import Login from './pages/Login'
 import SignupPatient from './pages/SignupPatient'
@@ -26,6 +27,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to="/select-role" replace />} />
+        <Route path="/demo" element={<App />} />
         <Route path="/select-role" element={<SelectRole />} />
         <Route path="/login/:role" element={<Login />} />
         <Route path="/signup/patient" element={<SignupPatient />} />

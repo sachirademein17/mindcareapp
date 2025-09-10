@@ -2,6 +2,7 @@
 import { Link } from 'react-router-dom'
 import axios from 'axios'
 import Chat from '../common/Chat'
+import { API_BASE_URL } from '../../config/api'
 
 const PatientChat = () => {
   const [doctors, setDoctors] = useState([])
@@ -13,7 +14,7 @@ const PatientChat = () => {
   }, [])
 
   const fetchApprovedDoctors = () => {
-    axios.get('http://localhost:5001/patient/enrollments', {
+    axios.get(`${API_BASE_URL}/patient/enrollments`, {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     }).then(res => {
       setDoctors(res.data)
