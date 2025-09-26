@@ -249,22 +249,119 @@ const BookingPayment: React.FC = () => {
             </div>
 
             {/* Payment Summary */}
-            <div className="border border-gray-200 rounded-xl p-6 mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                💰 Payment Summary
-              </h3>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span className="text-gray-600">Consultation Fee</span>
-                  <span className="font-medium">${Number(bookingDetails.consultationFee).toFixed(2)}</span>
+            <div className="border border-gray-200 rounded-xl p-6 mb-6 bg-gradient-to-br from-blue-50 to-indigo-50">
+              <div className="flex items-center mb-4">
+                <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center mr-3">
+                  <span className="text-white text-lg">💰</span>
                 </div>
-                <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span className="text-gray-600">Platform Fee</span>
-                  <span className="font-medium">$0.00</span>
+                <h3 className="text-xl font-bold text-gray-900">
+                  Payment Summary
+                </h3>
+              </div>
+              
+              {/* Consultation Details */}
+              <div className="bg-white rounded-lg p-4 mb-4 border border-blue-100">
+                <h4 className="text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                  Consultation Details
+                </h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">👨‍⚕️ Doctor:</span>
+                    <span className="font-medium text-gray-900">{bookingDetails.doctorName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">🏥 Specialization:</span>
+                    <span className="font-medium text-gray-900">{bookingDetails.specialization}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">📅 Date & Time:</span>
+                    <span className="font-medium text-gray-900">
+                      {bookingDetails.meetingDate} at {bookingDetails.startTime}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">⏱️ Duration:</span>
+                    <span className="font-medium text-gray-900">1 hour session</span>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center py-2 text-lg font-semibold">
-                  <span className="text-gray-900">Total Amount</span>
-                  <span className="text-blue-600">${Number(bookingDetails.consultationFee).toFixed(2)} USD</span>
+              </div>
+
+              {/* Cost Breakdown */}
+              <div className="bg-white rounded-lg p-4 border border-blue-100">
+                <h4 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
+                  Payment Structure
+                </h4>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center py-2 bg-green-50 rounded-lg px-3">
+                    <div>
+                      <span className="text-gray-700 font-medium">Doctor's Consultation Fee</span>
+                      <p className="text-xs text-gray-500">Full session value (paid separately to doctor)</p>
+                    </div>
+                    <span className="font-semibold text-gray-900">${Number(bookingDetails.consultationFee).toFixed(2)}</span>
+                  </div>
+                  
+                  <div className="border-t border-gray-100 pt-3">
+                    <div className="flex justify-between items-center mb-1 bg-blue-50 rounded-lg px-3 py-2">
+                      <div>
+                        <span className="text-blue-700 font-semibold">Platform Service Fee (15%)</span>
+                        <p className="text-xs text-blue-600">What you pay now via Stripe</p>
+                        <p className="text-xs text-gray-500">Secure platform, scheduling & support</p>
+                      </div>
+                      <span className="text-lg font-bold text-blue-700">
+                        ${(Number(bookingDetails.consultationFee) * 0.15).toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs text-gray-500 mt-2">
+                      <span>• Doctor receives directly from you:</span>
+                      <span className="font-medium">${(Number(bookingDetails.consultationFee) * 0.85).toFixed(2)}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="border-t-2 border-blue-200 pt-3">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <span className="text-lg font-bold text-blue-600">You Pay Now (Stripe)</span>
+                        <p className="text-xs text-green-600 font-medium">✓ Platform service fee only</p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-blue-600">
+                          ${(Number(bookingDetails.consultationFee) * 0.15).toFixed(2)}
+                        </div>
+                        <div className="text-xs text-gray-500">USD</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment Method Notice */}
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mt-4">
+                <div className="flex items-start">
+                  <span className="text-amber-600 mr-2 mt-0.5">💡</span>
+                  <div className="text-sm">
+                    <p className="text-amber-800 font-medium mb-1">Payment Method:</p>
+                    <ul className="text-amber-700 text-xs space-y-1">
+                      <li>• <strong>Platform Fee (${(Number(bookingDetails.consultationFee) * 0.15).toFixed(2)}):</strong> Paid now via Stripe</li>
+                      <li>• <strong>Doctor Fee (${(Number(bookingDetails.consultationFee) * 0.85).toFixed(2)}):</strong> Paid directly to doctor after session</li>
+                      <li>• This reduces your upfront payment to just the platform service fee</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Important Notice */}
+              <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-3">
+                <div className="flex items-start">
+                  <span className="text-green-600 mr-2 mt-0.5">ℹ️</span>
+                  <div className="text-sm">
+                    <p className="text-green-800 font-medium mb-1">What's included:</p>
+                    <ul className="text-green-700 text-xs space-y-1">
+                      <li>• Secure video consultation platform</li>
+                      <li>• Session recording & notes (if needed)</li>
+                      <li>• 24/7 customer support</li>
+                      <li>• Full refund if doctor cancels</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             </div>

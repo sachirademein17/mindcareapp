@@ -40,13 +40,15 @@ export class PaymentService {
       const platformFee = stripeService.calculatePlatformFee(amount)
       const doctorEarnings = stripeService.calculateDoctorEarnings(amount)
 
-      // Create Stripe payment intent
-      const paymentIntent = await stripeService.createPaymentIntent(amount, 'usd', {
+      // Create Stripe payment intent - ONLY for platform commission (15%)
+      const paymentIntent = await stripeService.createPaymentIntent(platformFee, 'usd', {
         meetingId: meetingId.toString(),
         patientId: patientId.toString(),
         doctorId: doctorId.toString(),
         meetingDate: meeting.meetingDate,
         startTime: meeting.startTime,
+        totalConsultationFee: amount.toString(),
+        platformCommissionOnly: 'true',
       })
 
       // Create payment record
@@ -54,7 +56,7 @@ export class PaymentService {
         meetingId,
         patientId,
         doctorId,
-        amount,
+        amount: platformFee, // Only platform commission is charged
         currency: 'USD',
         status: 'pending',
         paymentMethod: 'stripe',
@@ -65,6 +67,8 @@ export class PaymentService {
           meetingDate: meeting.meetingDate,
           startTime: meeting.startTime,
           endTime: meeting.endTime,
+          fullConsultationFee: amount, // Store full fee for reference
+          patientPaysOnly: platformFee, // What patient actually pays
         }),
       })
 

@@ -252,65 +252,110 @@ const PaymentResult: React.FC = () => {
             {result.message}
           </p>
           
-          {/* Payment details */}
+          {/* Payment Confirmation Details */}
           <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 mb-6 text-left">
-            <h3 className="font-semibold text-green-900 mb-4 text-center">
-              ✅ Payment & Booking Confirmed
-            </h3>
-            
-            <div className="space-y-3 text-sm">
-              {result.paymentIntentId && (
-                <div className="flex justify-between">
-                  <span className="text-green-700">Payment ID:</span>
-                  <span className="font-mono text-green-900 text-xs">
-                    {result.paymentIntentId.slice(-12)}
-                  </span>
-                </div>
-              )}
-              
-              {result.meetingId && (
-                <div className="flex justify-between">
-                  <span className="text-green-700">Meeting ID:</span>
-                  <span className="font-semibold text-green-900">#{result.meetingId}</span>
-                </div>
-              )}
-              
-              {result.amount && (
-                <div className="flex justify-between">
-                  <span className="text-green-700">Amount Paid:</span>
-                  <span className="font-semibold text-green-900">
-                    ${result.amount.toFixed(2)} {result.currency?.toUpperCase()}
-                  </span>
-                </div>
-              )}
-              
-              {result.doctorName && (
-                <div className="flex justify-between">
-                  <span className="text-green-700">Doctor:</span>
-                  <span className="font-semibold text-green-900">{result.doctorName}</span>
-                </div>
-              )}
-              
-              {result.meetingDate && (
-                <div className="flex justify-between">
-                  <span className="text-green-700">Date:</span>
-                  <span className="font-semibold text-green-900">{result.meetingDate}</span>
-                </div>
-              )}
-              
-              {result.startTime && (
-                <div className="flex justify-between">
-                  <span className="text-green-700">Time:</span>
-                  <span className="font-semibold text-green-900">{result.startTime}</span>
-                </div>
-              )}
-            </div>
-            
-            <div className="mt-4 p-3 bg-green-100 rounded-lg">
-              <div className="text-xs text-green-800 text-center">
-                <strong>Next Step:</strong> Your appointment request has been sent to the doctor. 
-                You'll receive a notification once approved.
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center mr-3">
+                <span className="text-white text-xl">✅</span>
               </div>
+              <h3 className="text-xl font-bold text-green-900">
+                Payment & Booking Confirmed
+              </h3>
+            </div>
+
+            {/* Appointment Summary */}
+            <div className="bg-white rounded-lg p-4 mb-4 border border-green-200">
+              <h4 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
+                📋 Appointment Summary
+              </h4>
+              <div className="space-y-2 text-sm">
+                {result.doctorName && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">👨‍⚕️ Doctor:</span>
+                    <span className="font-semibold text-gray-900">{result.doctorName}</span>
+                  </div>
+                )}
+                
+                {result.meetingDate && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">📅 Date:</span>
+                    <span className="font-medium text-gray-900">{result.meetingDate}</span>
+                  </div>
+                )}
+                
+                {result.startTime && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">🕐 Time:</span>
+                    <span className="font-medium text-gray-900">{result.startTime} (1 hour session)</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Payment Summary */}
+            <div className="bg-white rounded-lg p-4 border border-green-200">
+              <h4 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
+                💳 Payment Details
+              </h4>
+              <div className="space-y-2 text-sm">
+                {result.amount && (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Consultation Fee:</span>
+                      <span className="font-semibold text-gray-900">
+                        ${result.amount.toFixed(2)} {result.currency?.toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-500">Platform Service Fee (15%):</span>
+                      <span className="text-gray-500">
+                        ${(result.amount * 0.15).toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-500">Doctor Receives:</span>
+                      <span className="text-gray-500">
+                        ${(result.amount * 0.85).toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="border-t border-green-200 pt-2 mt-2">
+                      <div className="flex justify-between">
+                        <span className="text-green-700 font-semibold">Total Paid:</span>
+                        <span className="font-bold text-green-900 text-lg">
+                          ${result.amount.toFixed(2)} {result.currency?.toUpperCase()}
+                        </span>
+                      </div>
+                    </div>
+                  </>
+                )}
+                
+                {result.paymentIntentId && (
+                  <div className="flex justify-between text-xs mt-3 pt-2 border-t border-gray-200">
+                    <span className="text-gray-500">Payment ID:</span>
+                    <span className="font-mono text-gray-600">
+                      {result.paymentIntentId.slice(-12)}
+                    </span>
+                  </div>
+                )}
+                
+                {result.meetingId && (
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-500">Booking Reference:</span>
+                    <span className="font-semibold text-gray-600">#{result.meetingId}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Next Steps */}
+            <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <h4 className="text-sm font-semibold text-blue-800 mb-2">📌 What happens next?</h4>
+              <ul className="text-xs text-blue-700 space-y-1">
+                <li>• Your appointment request has been sent to the doctor</li>
+                <li>• You'll receive a confirmation once the doctor approves</li>
+                <li>• Check your meetings page for updates</li>
+                <li>• Full refund if doctor declines or cancels</li>
+              </ul>
             </div>
           </div>
           

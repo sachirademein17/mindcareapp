@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import axios from 'axios'
-import { Bot } from 'lucide-react'
 import { API_BASE_URL } from '../../config/api'
 import ReportUserModal from '../../components/ReportUserModal'
 import UnifiedMeetingCalendar from '../../components/UnifiedMeetingCalendar'
 import MeetingDetailModal from '../../components/MeetingDetailModal'
-import AIChatbot from '../../components/AIChatbot'
 
 interface Meeting {
   id: number
@@ -47,7 +45,6 @@ const DoctorDashboard = () => {
   const [error, setError] = useState<string>('')
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null)
   const [showMeetingModal, setShowMeetingModal] = useState(false)
-  const [isChatbotOpen, setIsChatbotOpen] = useState(false)
 
   useEffect(() => {
     console.log('DoctorDashboard mounted')
@@ -280,25 +277,7 @@ const DoctorDashboard = () => {
           )}
 
           {/* Floating Chatbot Button */}
-          <button
-            onClick={() => setIsChatbotOpen(true)}
-            className="fixed bottom-6 right-6 bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 z-40 group"
-            title="Open AI Assistant"
-          >
-            <Bot className="h-6 w-6" />
-            <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center animate-pulse">
-              !
-            </div>
-            <span className="absolute bottom-full right-0 mb-2 px-2 py-1 text-xs bg-gray-800 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-              AI Mental Health Assistant
-            </span>
-          </button>
 
-          {/* AI Chatbot Component */}
-          <AIChatbot 
-            isOpen={isChatbotOpen} 
-            onClose={() => setIsChatbotOpen(false)} 
-          />
         </>
       )}
     </div>

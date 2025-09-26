@@ -81,27 +81,78 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
   return (
     <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
       {/* Payment Summary */}
-      <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-        <h3 className="text-lg font-semibold text-gray-800 mb-2">Payment Summary</h3>
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-gray-600">Doctor:</span>
-            <span className="font-medium">{doctorName}</span>
+      <div className="mb-6 p-5 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+        <div className="flex items-center mb-3">
+          <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center mr-3">
+            <span className="text-white text-sm">💳</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Date:</span>
-            <span className="font-medium">{meetingDate}</span>
+          <h3 className="text-lg font-bold text-gray-800">Payment Details</h3>
+        </div>
+        
+        {/* Appointment Info */}
+        <div className="bg-white rounded-lg p-3 mb-3 border border-blue-100">
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-gray-600">👨‍⚕️ Doctor:</span>
+              <span className="font-semibold text-gray-900">{doctorName}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">📅 Date:</span>
+              <span className="font-medium text-gray-900">{meetingDate}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">🕐 Time:</span>
+              <span className="font-medium text-gray-900">{startTime} (1 hour)</span>
+            </div>
           </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Time:</span>
-            <span className="font-medium">{startTime}</span>
+        </div>
+
+        {/* Cost Breakdown */}
+        <div className="bg-white rounded-lg p-3 border border-blue-100">
+          <div className="space-y-2">
+            <div className="flex justify-between items-center bg-green-50 rounded px-2 py-1">
+              <div>
+                <span className="text-gray-700 font-medium text-sm">Total Consultation Value</span>
+                <p className="text-xs text-gray-500">Full session fee</p>
+              </div>
+              <span className="font-semibold text-gray-900">
+                {currency.toUpperCase()} {numericAmount.toFixed(2)}
+              </span>
+            </div>
+            
+            <div className="border-t border-gray-100 pt-2">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-gray-500">• Platform Service Fee (15%):</span>
+                <span className="text-blue-600 font-medium">
+                  {currency.toUpperCase()} {(numericAmount * 0.15).toFixed(2)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-xs mt-1">
+                <span className="text-gray-500">• Doctor receives separately:</span>
+                <span className="text-gray-500">
+                  {currency.toUpperCase()} {(numericAmount * 0.85).toFixed(2)}
+                </span>
+              </div>
+            </div>
+            
+            <div className="border-t-2 border-blue-200 pt-2 mt-2">
+              <div className="flex justify-between items-center bg-blue-50 rounded px-2 py-1">
+                <div>
+                  <span className="text-blue-800 font-bold">Stripe Payment Now:</span>
+                  <p className="text-xs text-blue-600">✓ Platform fee only</p>
+                </div>
+                <span className="font-bold text-xl text-blue-600">
+                  {currency.toUpperCase()} {(numericAmount * 0.15).toFixed(2)}
+                </span>
+              </div>
+            </div>
           </div>
-          <div className="flex justify-between border-t pt-2 mt-2">
-            <span className="text-gray-600">Consultation Fee:</span>
-            <span className="font-bold text-lg">
-              {currency.toUpperCase()} {numericAmount.toFixed(2)}
-            </span>
-          </div>
+        </div>
+
+        {/* Security Notice */}
+        <div className="mt-3 flex items-center text-xs text-gray-600 bg-white rounded-lg p-2 border border-green-200">
+          <span className="text-green-600 mr-2">🔒</span>
+          <span>Secure payment powered by Stripe • 256-bit SSL encryption</span>
         </div>
       </div>
 

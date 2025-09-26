@@ -501,9 +501,12 @@ const DoctorMeetings: React.FC = () => {
                             <span className={`px-3 py-1 rounded-lg text-sm font-medium border ${getStatusColor(meeting.status)}`}>
                               {meeting.status.charAt(0).toUpperCase() + meeting.status.slice(1)}
                             </span>
-                            <span className="text-green-300 text-sm font-medium">
-                              ${meeting.consultationFee}
-                            </span>
+                            <div className="text-green-300 text-sm">
+                              <span className="font-medium">${meeting.consultationFee}</span>
+                              <span className="text-xs text-gray-400 ml-1">
+                                (You earn: ${(meeting.consultationFee * 0.85).toFixed(2)})
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>

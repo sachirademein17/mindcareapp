@@ -25,7 +25,7 @@ export interface PaymentAttributes {
   refundReason?: string
   
   // Processing Info
-  processingFee: number // Platform fee (e.g., 5% of amount)
+  processingFee: number // Platform fee (15% of amount)
   doctorEarnings: number // Amount doctor receives after fees
   
   // Metadata

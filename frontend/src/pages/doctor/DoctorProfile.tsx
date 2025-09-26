@@ -310,9 +310,15 @@ const DoctorProfile: React.FC = () => {
                   step="0.01"
                   required
                 />
-                <p className="text-sm text-gray-600 mt-1">
-                  💰 Set your hourly consultation fee in USD. This will be charged to patients for each session.
-                </p>
+                <div className="text-sm text-gray-600 mt-1 space-y-1">
+                  <p>💰 Set your hourly consultation fee in USD. This will be charged to patients for each session.</p>
+                  <p className="text-amber-600 font-medium">
+                    📊 Platform Commission: 15% | You receive: 85% of each consultation fee
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Example: If you set $50/hour, you receive $42.50 per session
+                  </p>
+                </div>
               </div>
 
               <div>

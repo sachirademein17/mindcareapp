@@ -219,10 +219,10 @@ export class StripeService {
   }
 
   /**
-   * Calculate platform fee (5% of total amount)
+   * Calculate platform fee (15% of total amount)
    */
   calculatePlatformFee(amount: number): number {
-    const feePercentage = 0.05 // 5%
+    const feePercentage = 0.15 // 15%
     return Math.round(amount * feePercentage * 100) / 100 // Round to 2 decimal places
   }
 

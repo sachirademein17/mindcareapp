@@ -6,7 +6,7 @@ import PaymentForm from './PaymentForm'
 import { API_BASE_URL } from '../../config/api'
 
 // Initialize Stripe
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY!)
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
 
 interface PaymentProcessorProps {
   meetingId: number
@@ -55,7 +55,11 @@ const PaymentProcessor: React.FC<PaymentProcessorProps> = ({
       setLoading(true)
       setError(null)
 
+      // Calculate platform fee (15% of consultation fee)
+      const platformFee = amount * 0.15
       console.log('🔄 Creating payment intent for meeting:', meetingId)
+      console.log('💰 Full consultation fee:', amount)
+      console.log('🏦 Platform fee (15%):', platformFee)
 
       const response = await fetch(`${API_BASE_URL}/api/meetings/${meetingId}/payment-intent`, {
         method: 'POST',
@@ -64,8 +68,10 @@ const PaymentProcessor: React.FC<PaymentProcessorProps> = ({
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({
-          amount: Math.round(amount * 100), // Convert to cents
-          currency: currency.toLowerCase()
+          amount: Math.round(amount * 100), // Full amount for backend calculation
+          platformFeeOnly: Math.round(platformFee * 100), // Platform fee in cents
+          currency: currency.toLowerCase(),
+          paymentType: 'platform_fee_only'
         })
       })
 
@@ -90,14 +96,23 @@ const PaymentProcessor: React.FC<PaymentProcessorProps> = ({
     }
   }
 
-  const handlePaymentSuccess = (paymentData: PaymentSuccessData) => {
+  const handlePaymentSuccess = (paymentData: { paymentIntentId: string; meetingId: number }) => {
+    const platformFee = amount * 0.15
     console.log('✅ Payment successful:', paymentData)
-    onSuccess({
-      ...paymentData,
-      doctorName,
-      meetingDate,
-      startTime
-    })
+    
+    // Create the full payment success data for parent component
+    const fullPaymentData: PaymentSuccessData = {
+      paymentIntentId: paymentData.paymentIntentId,
+      meetingId: paymentData.meetingId,
+      amount: platformFee, // Actual amount paid (platform fee)
+      currency: 'usd',
+      status: 'succeeded',
+      doctorName: doctorName || '',
+      meetingDate: meetingDate || '',
+      startTime: startTime || ''
+    }
+    
+    onSuccess(fullPaymentData)
   }
 
   const handlePaymentError = (errorMessage: string) => {
@@ -196,15 +211,17 @@ const PaymentProcessor: React.FC<PaymentProcessorProps> = ({
     )
   }
 
+  const platformFee = amount * 0.15
+
   return (
     <Elements stripe={stripePromise} options={stripeOptions}>
       <PaymentForm
         meetingId={meetingId}
-        amount={amount}
+        amount={platformFee}
         currency={currency}
-        doctorName={doctorName}
-        meetingDate={meetingDate}
-        startTime={startTime}
+        doctorName={doctorName || 'Doctor'}
+        meetingDate={meetingDate || 'Date not available'}
+        startTime={startTime || 'Time not available'}
         onSuccess={handlePaymentSuccess}
         onError={handlePaymentError}
         onCancel={onCancel}

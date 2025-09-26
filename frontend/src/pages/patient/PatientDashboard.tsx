@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar as CalendarIcon, Clock, MessageSquare, User, Heart, FileText, Video, Star, Search, Stethoscope, Lock, Bot } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, MessageSquare, User, Heart, FileText, Video, Star, Search, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../../config/api';
-import AIChatbot from '../../components/AIChatbot';
 
 interface User {
   id: number;
@@ -24,7 +23,6 @@ const PatientDashboard: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const [stats, setStats] = useState({
     totalMeetings: 0,
     upcomingMeetings: 0,
@@ -286,26 +284,7 @@ const PatientDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Floating Chatbot Button */}
-      <button
-        onClick={() => setIsChatbotOpen(true)}
-        className="fixed bottom-6 right-6 bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 z-40 group"
-        title="Open AI Assistant"
-      >
-        <Bot className="h-6 w-6" />
-        <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center animate-pulse">
-          !
-        </div>
-        <span className="absolute bottom-full right-0 mb-2 px-2 py-1 text-xs bg-gray-800 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-          AI Mental Health Assistant
-        </span>
-      </button>
 
-      {/* AI Chatbot Component */}
-      <AIChatbot 
-        isOpen={isChatbotOpen} 
-        onClose={() => setIsChatbotOpen(false)} 
-      />
     </div>
   );
 };
